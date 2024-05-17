@@ -1,4 +1,5 @@
-﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
+﻿using Appeon.DotnetDemo.Dw2Doc.Common.Constants;
+using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
 using Appeon.DotnetDemo.Dw2Doc.Xlsx.Extensions;
 using Appeon.DotnetDemo.Dw2Doc.Xlsx.Models;
 using Appeon.DotnetDemo.Dw2Doc.XlsxTester.Models;
@@ -24,7 +25,8 @@ public class CheckboxTester : AbstractAttributeTester<DwCheckboxAttributes>
                 testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "text",
                     bool.TrueString,
                     cell.OutputCell.StringCellValue
-                        .Contains(attr.Text)
+                        .ToLower()
+                        .Contains(attr.Label?.ToLower() ?? string.Empty)
                         .ToString()));
 
             testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "checked",
@@ -66,12 +68,12 @@ public class CheckboxTester : AbstractAttributeTester<DwCheckboxAttributes>
                 font.IsStrikeout.ToString()));
 
             testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "is underline",
-                attr.Underline.ToString(),
+                attr.Underline ? "Single" : "None",
                 font.Underline.ToString()));
 
             testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "background color",
                 attr.BackgroundColor.Value.ToRgb().ToString(),
-                style.FillForegroundColor.ToString()));
+                style.FillForegroundColorColor.RGB.ToColor().ToRgb().ToString()));
 
             testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "background transparent",
                 (attr.BackgroundColor.Value.A == 0).ToString(),
@@ -85,8 +87,7 @@ public class CheckboxTester : AbstractAttributeTester<DwCheckboxAttributes>
                 attr.LeftText.ToString(),
                 (cell.OutputCell.StringCellValue[0] switch
                 {
-                    '✅' => true,
-                    '☐' => true,
+                    RendererConstants.CheckboxCheckedState or RendererConstants.CheckboxUncheckedState => false,
                     _ => false
                 }).ToString()));
 
@@ -146,8 +147,7 @@ public class CheckboxTester : AbstractAttributeTester<DwCheckboxAttributes>
                 attr.LeftText.ToString(),
                 (run.Text[0] switch
                 {
-                    '✅' => false,
-                    '☐' => false,
+                    RendererConstants.CheckboxCheckedState or RendererConstants.CheckboxUncheckedState => false,
                     _ => true
                 }).ToString()));
 

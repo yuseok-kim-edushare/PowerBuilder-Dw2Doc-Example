@@ -15,22 +15,30 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
             error = null;
             if (WriteToPath is not null)
             {
-                if (Append)
+                try
                 {
-                    if (!File.Exists(WriteToPath))
+                    if (Append)
                     {
-                        error = $"Specified path [{WriteToPath}] does not exist";
-                        return null;
-                    }
+                        if (!File.Exists(WriteToPath))
+                        {
+                            error = $"Specified path [{WriteToPath}] does not exist";
+                            return null;
+                        }
 
-                    if (AppendToSheetName is null)
-                    {
-                        error = "Did not specify a sheet name";
-                        return null;
+                        if (AppendToSheetName is null)
+                        {
+                            error = "Did not specify a sheet name";
+                            return null;
+                        }
+                        return new VirtualGridXlsxWriter(grid, WriteToPath, AppendToSheetName);
                     }
-                    return new VirtualGridXlsxWriter(grid, WriteToPath, AppendToSheetName);
+                    return new VirtualGridXlsxWriter(grid, WriteToPath);
                 }
-                return new VirtualGridXlsxWriter(grid, WriteToPath);
+                catch (Exception e)
+                {
+                    error = e.Message;
+                    return null;
+                }
             }
 
             error = "Must specify a path";

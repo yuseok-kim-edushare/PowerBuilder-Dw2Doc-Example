@@ -52,11 +52,14 @@
                         var band = _bands.FirstOrDefault((band) => band.Name == control.Band);
                         if (band is null)
                         {
-                            error = $"Control {control.Name}' band {control.Band} not in band list";
-                            return null;
+                            //error = $"Control {control.Name}'s band {control.Band} not in band list";
+                            //return null;
+                            controlY = control.Y;
                         }
-
-                        controlY = control.Y + band.Position;
+                        else
+                        {
+                            controlY = control.Y + band.Position;
+                        }
 
                     }
 

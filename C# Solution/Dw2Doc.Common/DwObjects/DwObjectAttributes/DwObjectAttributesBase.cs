@@ -8,5 +8,20 @@
         public DwObjectAttributesBase()
         {
         }
+
+        // override object.Equals
+        public override bool Equals(object obj)
+        {
+            return obj is DwObjectAttributesBase other
+                && IsVisible == other.IsVisible
+                && Floating == other.Floating;
+        }
+
+        // override object.GetHashCode
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(IsVisible,
+                Floating);
+        }
     }
 }

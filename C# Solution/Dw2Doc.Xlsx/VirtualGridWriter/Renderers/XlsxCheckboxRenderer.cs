@@ -1,4 +1,5 @@
-﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
+﻿using Appeon.DotnetDemo.Dw2Doc.Common.Constants;
+using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Models;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Renderers.Attributes;
@@ -13,6 +14,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
     [RendererFor(typeof(DwCheckboxAttributes), typeof(XlsxCheckboxRenderer))]
     internal class XlsxCheckboxRenderer : AbstractXlsxRenderer
     {
+
         private const double TextBoxWidthAdjustment = 5;
 
         private static double ConvertFontSize(DwTextAttributes attributes)
@@ -48,9 +50,13 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
 
             renderTarget.CellStyle = style;
             if (textAttribute.LeftText)
-                renderTarget.SetCellValue(textAttribute.Label + (textAttribute.Text == textAttribute.CheckedValue ? " ✅" : " ☐"));
+                renderTarget.SetCellValue(textAttribute.Label + (textAttribute.Text == textAttribute.CheckedValue
+                    ? $" {RendererConstants.CheckboxCheckedState}"
+                    : $" {RendererConstants.CheckboxUncheckedState}"));
             else
-                renderTarget.SetCellValue((textAttribute.Text == textAttribute.CheckedValue ? "✅ " : "☐ ") + textAttribute.Label);
+                renderTarget.SetCellValue((textAttribute.Text == textAttribute.CheckedValue
+                    ? $"{RendererConstants.CheckboxCheckedState} "
+                    : $"{RendererConstants.CheckboxUncheckedState} ") + textAttribute.Label);
 
             return new ExportedCell(cell, attribute)
             {
@@ -90,9 +96,13 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
                 textAttribute.FontColor.Value.G,
                 textAttribute.FontColor.Value.B);
             if (textAttribute.LeftText)
-                run.Text = textAttribute.Label + (textAttribute.Text == textAttribute.CheckedValue ? " ✅" : " ☐");
+                run.Text = textAttribute.Label + (textAttribute.Text == textAttribute.CheckedValue
+                    ? $" {RendererConstants.CheckboxCheckedState}"
+                    : $" {RendererConstants.CheckboxUncheckedState}");
             else
-                run.Text = (textAttribute.Text == textAttribute.CheckedValue ? "✅ " : "☐ ") + textAttribute.Label;
+                run.Text = (textAttribute.Text == textAttribute.CheckedValue
+                    ? $"{RendererConstants.CheckboxCheckedState} "
+                    : $"{RendererConstants.CheckboxUncheckedState} ") + textAttribute.Label;
             run.FontSize = ConvertFontSize(textAttribute);
             run.IsItalic = textAttribute.Italics;
             run.IsStrikethrough = textAttribute.Strikethrough;

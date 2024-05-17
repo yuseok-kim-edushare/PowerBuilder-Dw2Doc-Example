@@ -10,13 +10,20 @@
             get { return _previousEntity; }
             set
             {
-                _previousEntity = value;
-                CalculateOffset();
+                if (_previousEntity != value)
+                {
+                    _previousEntity = value;
+                    CalculateOffset();
+                }
             }
         }
 
         public T? NextEntity { get; set; }
         public int Offset { get; protected set; }
+        /// <summary>
+        /// 1 indexed value that indicates the ordinal position of the entity
+        /// in the chain
+        /// </summary>
         public int IndexOffset { get; protected set; }
         public int Size { get; set; }
         public int Bound => Offset + Size;
@@ -63,11 +70,34 @@
 
         }
 
+        public void RecalculateChainOffsets()
+        {
+
+            /// Get the first entity in the chain
+            EntityDefinition<T>? currentEntity = this;
+            while (currentEntity.PreviousEntity is not null)
+            {
+                currentEntity = currentEntity.PreviousEntity;
+            }
+
+            int i = 0;
+            while (currentEntity is not null)
+            {
+                currentEntity.Offset = (currentEntity.PreviousEntity is null
+                    ? 0
+                    : currentEntity.PreviousEntity.Offset + currentEntity.PreviousEntity.Size);
+                currentEntity.IndexOffset = currentEntity.PreviousEntity is null
+                    ? 0
+                    : ++i;
+                currentEntity = currentEntity.NextEntity;
+            }
+        }
+
         public void RemoveFromChain()
         {
             if (Objects.Any())
             {
-                throw new InvalidOperationException("Cannor remove an entity with controls in it");
+                throw new InvalidOperationException("Cannot remove an entity with controls in it");
             }
             if (PreviousEntity is not null)
             {

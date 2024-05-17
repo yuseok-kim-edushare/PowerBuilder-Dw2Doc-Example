@@ -8,15 +8,12 @@ using Appeon.DotnetDemo.Dw2Doc.Xlsx.Models;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
 {
     [RendererFor(typeof(DwRadioButtonAttributes), typeof(XlsxRadioButtonRenderer))]
     internal class XlsxRadioButtonRenderer : AbstractXlsxRenderer
     {
-
         private const double TextBoxWidthAdjustment = 5;
 
         private static double ConvertFontSize(DwTextAttributes attributes)
@@ -55,6 +52,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
             style.Alignment = textAttribute.Alignment.ToNpoiHorizontalAlignment();
             style.VerticalAlignment = VerticalAlignment.Top;
 
+            style.WrapText = true;
             renderTarget.CellStyle = style;
 
             //renderTarget.SetCellValue(textAttribute.Text);

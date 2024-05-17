@@ -1,11 +1,7 @@
 ﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects;
 using Appeon.DotnetDemo.Dw2Doc.Common.Utils.Comparer;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Appeon.DotnetDemo.Dw2Doc.Common.Extensions
 {
@@ -50,7 +46,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.Extensions
             var byName = new Dictionary<string, VirtualCell>();
             var byBand = new Dictionary<string, IDictionary<string, VirtualCell>>();
             var byY = new SortedList<int, IList<VirtualCell>>();
-            var byX = new SortedList<int, ISet<VirtualCell>>();
+            var byX = new SortedList<int, IList<VirtualCell>>();
             var cells = new HashSet<VirtualCell>();
 
             VirtualCell cell;
@@ -59,7 +55,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.Extensions
                 cell = new VirtualCell(control);
                 byName[control.Name] = cell;
                 if (!byX.ContainsKey(control.X))
-                    byX[control.X] = new HashSet<VirtualCell>();
+                    byX[control.X] = new List<VirtualCell>();
 
                 byX[control.X].Add(cell);
 

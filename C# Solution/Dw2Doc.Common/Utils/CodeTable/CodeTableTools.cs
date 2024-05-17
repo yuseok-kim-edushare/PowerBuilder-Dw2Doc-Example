@@ -1,13 +1,10 @@
-﻿using System.Text;
+﻿using Appeon.DotnetDemo.Dw2Doc.Common.Constants;
+using System.Text;
 
 namespace Appeon.DotnetDemo.Dw2Doc.Common.Utils.CodeTable;
 
 public class CodeTableTools
 {
-
-    private const string RadioButtonSelected = "◉";
-    private const string RadioButtonUnselected = "⊙";
-
     public static bool GetValueMap(string codetableString, out IDictionary<string, string>? codetable, out string? error)
     {
         error = null;
@@ -68,9 +65,9 @@ public class CodeTableTools
     }
 
     private static string? GetButton(IDictionary<string, string> codetable, string? value, string expected)
-            => value is null
-            ? RadioButtonUnselected
+            => (value is null
+            ? RendererConstants.RadioButtonUnselected
             : codetable.ContainsKey(value) && codetable[value] == expected
-                ? RadioButtonSelected
-                : RadioButtonUnselected;
+                ? RendererConstants.RadioButtonSelected
+                : RendererConstants.RadioButtonUnselected).ToString();
 }

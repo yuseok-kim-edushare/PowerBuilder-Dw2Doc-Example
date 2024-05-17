@@ -33,6 +33,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers
                 return null;
 
             int pictureIndex = -1;
+            XSSFShape? outputShape = null;
 
             XSSFClientAnchor anchor = GetAnchor(
                 renderTarget.draw,
@@ -57,6 +58,8 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers
                     var run = paragraph.AddNewTextRun();
                     run.Text = $"{pictureAttribute.FileName} not found";
                     textBox.LineStyle = LineStyle.Solid;
+
+                    outputShape = textBox;
                 }
                 else
                 {
@@ -99,11 +102,13 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers
 
             anchor.AnchorType = AnchorType.MoveDontResize;
 
-            XSSFPicture picture = (XSSFPicture)renderTarget.draw.CreatePicture(anchor, pictureIndex);
-
+            if (pictureIndex != -1)
+            {
+                outputShape = (XSSFPicture)renderTarget.draw.CreatePicture(anchor, pictureIndex);
+            }
             return new ExportedFloatingCell(cell, attribute)
             {
-                OutputShape = picture,
+                OutputShape = outputShape,
             };
         }
     }

@@ -22,5 +22,28 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes
         }
 
         public DwLineAttributes() { }
+
+        // override object.Equals
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj)
+                && obj is DwLineAttributes other
+                && Start == other.Start
+                && End == other.End
+                && LineWidth == other.LineWidth
+                && LineColor.Equals(other.LineColor)
+                && LineStyle == other.LineStyle;
+        }
+
+        // override object.GetHashCode
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(base.GetHashCode(),
+                Start,
+                End,
+                LineWidth,
+                LineColor,
+                LineStyle);
+        }
     }
 }

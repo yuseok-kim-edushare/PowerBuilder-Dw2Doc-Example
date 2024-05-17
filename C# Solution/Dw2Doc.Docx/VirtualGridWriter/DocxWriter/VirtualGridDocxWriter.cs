@@ -1,9 +1,8 @@
 ﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions;
-using NPOI.OpenXmlFormats.Spreadsheet;
+using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Models;
 using NPOI.OpenXmlFormats.Wordprocessing;
-using NPOI.SS.UserModel;
 using NPOI.XWPF.UserModel;
 using System.Diagnostics.CodeAnalysis;
 
@@ -52,12 +51,12 @@ namespace Appeon.DotnetDemo.Dw2Doc.Docx.VirtualGridWriter.DocxWriter
         }
 
 
-        protected override void WriteRows(IList<RowDefinition> rows, IDictionary<string, DwObjectAttributesBase> data)
+        protected override IList<ExportedCellBase>? WriteRows(IList<RowDefinition> rows, IDictionary<string, DwObjectAttributesBase> data)
         {
             InitDocument();
 
             if (data is null)
-                return;
+                return null;
 
             foreach (var row in rows)
             {
@@ -83,10 +82,12 @@ namespace Appeon.DotnetDemo.Dw2Doc.Docx.VirtualGridWriter.DocxWriter
                 }
             }
 
+            return null;
+
         }
 
 
-        public override bool Write(string path, out string? error)
+        public override bool Write(string? path, out string? error)
         {
             error = null;
 

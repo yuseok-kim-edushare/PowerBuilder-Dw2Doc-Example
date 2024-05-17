@@ -50,8 +50,39 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
             style.Alignment = textAttribute.Alignment.ToNpoiHorizontalAlignment();
             style.VerticalAlignment = VerticalAlignment.Top;
 
+
+
+            XSSFCell xTarget = renderTarget as XSSFCell;
+            if (textAttribute.FormatString is not null
+                && textAttribute.FormatString.ToLower() != "[general]")
+            {
+                switch (textAttribute.DataType)
+                {
+                    case Common.Enums.DataType.Money:
+                    case Common.Enums.DataType.Number:
+                        style.SetDataFormat(sheet
+                            .Workbook
+                            .CreateDataFormat()
+                            .GetFormat(textAttribute
+                                    .FormatString
+                                    //?
+                                    //.Split(";")
+                                    //.FirstOrDefault() ?? ""
+                                    ));
+
+                        break;
+                }
+            }
+
             renderTarget.CellStyle = style;
-            renderTarget.SetCellValue(textAttribute.Text);
+            if (!string.IsNullOrEmpty(textAttribute.Text) &&
+                (textAttribute.DataType is Common.Enums.DataType.Money ||
+                textAttribute.DataType is Common.Enums.DataType.Number))
+            {
+                renderTarget.SetCellValue(double.Parse(textAttribute.RawText));
+            }
+            else
+                renderTarget.SetCellValue(textAttribute.Text);
 
             return new ExportedCell(cell, attribute)
             {

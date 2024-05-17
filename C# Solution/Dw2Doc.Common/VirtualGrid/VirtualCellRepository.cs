@@ -6,7 +6,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
     {
         internal Dictionary<string, VirtualCell> CellsByControlName { get; }
         internal Dictionary<string, IDictionary<string, VirtualCell>> RowsByBand { get; }
-        internal SortedList<int, ISet<VirtualCell>> CellsByX { get; }
+        internal SortedList<int, IList<VirtualCell>> CellsByX { get; }
         internal SortedList<int, IList<VirtualCell>> CellsByY { get; }
         internal HashSet<VirtualCell> Cells { get; }
 
@@ -14,14 +14,14 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
         {
             CellsByControlName = new Dictionary<string, VirtualCell>();
             RowsByBand = new Dictionary<string, IDictionary<string, VirtualCell>>();
-            CellsByX = new SortedList<int, ISet<VirtualCell>>();
+            CellsByX = new SortedList<int, IList<VirtualCell>>();
             CellsByY = new SortedList<int, IList<VirtualCell>>();
             Cells = new HashSet<VirtualCell>();
         }
 
         internal VirtualCellRepository(Dictionary<string, VirtualCell> controlsByName,
             Dictionary<string, IDictionary<string, VirtualCell>> cellsByBand,
-            SortedList<int, ISet<VirtualCell>> controlsByX,
+            SortedList<int, IList<VirtualCell>> controlsByX,
             SortedList<int, IList<VirtualCell>> controlsByY,
             HashSet<VirtualCell> controls)
         {

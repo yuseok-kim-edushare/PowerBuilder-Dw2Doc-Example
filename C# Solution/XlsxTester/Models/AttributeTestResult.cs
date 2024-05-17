@@ -4,7 +4,9 @@ public class AttributeTestResult
 {
     public string ObjectName { get; set; }
     public string Attribute { get; set; }
-    public bool Result => ExpectedValue == RealValue;
+    public bool Result => ExpectedValue == RealValue
+        || (decimal.TryParse(ExpectedValue, out decimal dec1)
+            && decimal.TryParse(RealValue, out decimal dec2) && dec1 == dec2);
     public string? ExpectedValue { get; set; }
     public string? RealValue { get; set; }
 

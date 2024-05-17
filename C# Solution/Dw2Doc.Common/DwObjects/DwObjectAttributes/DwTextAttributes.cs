@@ -5,6 +5,9 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes
 {
     public class DwTextAttributes : DwObjectAttributesBase
     {
+        public DataType DataType { get; set; }
+        public string? FormatString { get; set; }
+        public string? RawText { get; set; }
         public string? Text { get; set; }
         public Alignment Alignment { get; set; } = Alignment.Left;
         public byte FontSize { get; set; }
@@ -27,14 +30,46 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes
             Floating = false;
         }
 
-        public override bool Equals(object? obj)
+        // override object.Equals
+        public override bool Equals(object obj)
         {
-            return obj is DwTextAttributes other && Text == other.Text;
+            return base.Equals(obj)
+                && obj is DwTextAttributes that
+                && DataType == that.DataType
+                && FormatString == that.FormatString
+                && RawText == that.RawText
+                && Text == that.Text
+                && Alignment == that.Alignment
+                && FontSize == that.FontSize
+                && FontWeight == that.FontWeight
+                && Underline == that.Underline
+                && Italics == that.Italics
+                && Strikethrough == that.Strikethrough
+                && FontFace == that.FontFace
+                && FontColor.Equals(that.FontColor)
+                && BackgroundColor.Equals(that.BackgroundColor);
         }
 
+        // override object.GetHashCode
         public override int GetHashCode()
         {
-            return Text?.GetHashCode() ?? 0;
+            return HashCode.Combine(base.GetHashCode()
+                , DataType
+                , FormatString
+                , RawText
+                , Text
+                , Alignment
+                , FontSize
+                , HashCode.Combine(
+                    FontWeight
+                    , Underline
+                    , Italics
+                    , Strikethrough
+                    , FontFace
+                    , FontColor
+                    , BackgroundColor
+                    )
+                );
         }
 
         public override string ToString()

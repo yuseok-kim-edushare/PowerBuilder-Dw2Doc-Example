@@ -27,11 +27,21 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
 
                 var cellRepo = controlMatrix.Controls.ToVirtualCellRepository();
 
+
+                /// Make sure objects are not smaller than the threshold value
+                foreach (var cell in cellRepo.Cells)
+                {
+                    if (cell.Width < XThreshold && !cell.Object.Floating)
+                        cell.Width = XThreshold;
+                }
+
+                //var firstPass =
+                //    RowFirstPass(cellRepo.CellsByY, controlMatrix.Bands);
+
                 var (virtualRows,
                     rowsPerBand,
-                    floatingControls) = DefineRows(cellRepo.CellsByY,
-                    controlMatrix.Bands,
-                    simplifyBands);
+                    floatingControls) =
+                    DefineRows(cellRepo.CellsByY, controlMatrix.Bands);
 
 
 
@@ -159,7 +169,9 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
                 /// dissolve filler rows
                 /// 
 
-                var fillerRows = virtualRows.Where(row => row.IsFiller)
+                var fillerRows = virtualRows.Where(row => row.IsFiller
+                                                                && row.PreviousEntity is not null
+                                                                && row.NextEntity is not null)
                     .ToList();
 
                 foreach (var row in fillerRows)
@@ -251,12 +263,53 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
             catch (Exception e)
             {
                 error = e.Message;
-                return null;
                 throw;
             }
         }
 
+        private static (IList<RowCandidate> fixedRows, IList<RowCandidate> floatingRows) GetRowCandidates(IList<RowCandidate> rows)
+        {
+            var ordered = rows
+                .OrderByDescending(row => row.Objects.Count)
+                .ThenBy(row => row.Height);
 
+            var rowProcessedArray = new bool[rows.Count];
+
+            var proposedRows = new List<RowCandidate>();
+            var floatingRows = new List<RowCandidate>();
+
+            int i = -1;
+            foreach (var row in ordered)
+            {
+                ++i;
+                if (rowProcessedArray[i])
+                    continue;
+
+                int j = -1;
+                foreach (var rowToCompare in ordered)
+                {
+                    ++j;
+                    if (row == rowToCompare || rowProcessedArray[j])
+                        continue;
+
+                    /// Rows overlap
+                    /// TODO: introduce threshold 
+                    if (row.Offset < rowToCompare.Bound && rowToCompare.Offset < row.Bound)
+                    {
+                        floatingRows.Add(rowToCompare);
+                        rowProcessedArray[j] = true;
+                    }
+
+                }
+
+                proposedRows.Add(row);
+                rowProcessedArray[i] = true;
+            }
+
+            /// There should not be any more overlapping
+
+            return (proposedRows, floatingRows);
+        }
 
         private static void CheckIntegrity(
             ICollection<RowDefinition> rows,
@@ -360,349 +413,6 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
             return null;
         }
 
-        private (
-            IList<RowDefinition>, // List of Rows
-            IDictionary<string, IList<RowDefinition>>, // band/row map
-            ISet<VirtualCell> // floating control set,
-            )
-            DefineRows(SortedList<int, IList<VirtualCell>> controls,
-                        IList<DwBand> bands,
-                        bool simplifyBand
-            )
-        {
-            // get overlapping chain
-            // find first control that doesn't overlap the first one of the chain
-            //  this will create 2 rows: one with the first component and the in-between (floating), and
-            //      the other one. This will become a new chain including the remaining controls in the chain
-
-
-            RowDefinition? currentRow = null;
-            RowDefinition? previousRow = null;
-
-            var rowsPerBand = new Dictionary<string, IList<RowDefinition>>();
-            var rowsInCurrentBand = new List<RowDefinition>();
-            var floatingControlSet = new HashSet<VirtualCell>();
-
-            string? previousBand = null;
-            string? currentBand = null;
-
-            foreach (var (y, controlSet) in controls)
-            {// create a row that pads the initial control offset, exluding floating controls
-                var firstNonFloatingCell = controlSet.Where(c => !c.Object.Floating)
-                    .FirstOrDefault();
-
-
-                if (firstNonFloatingCell is not null)
-                {
-                    if (y > YThreshold)
-                    {
-                        previousRow = new RowDefinition()
-                        {
-                            Size = y,
-                            BandName = firstNonFloatingCell.Object.Band,
-                            IsPadding = true,
-                        };
-
-                        rowsInCurrentBand.Add(previousRow);
-                    }
-
-                    break;
-                }
-            }
-
-            foreach (var (y, controlSet) in controls)
-            // each controlSet contains controls that have same Y
-            {
-                // Get smallest control and define row around it, rest of controls will be floating 
-                // TODO: design better algorithm to make the most controls be not floating
-                int smallestSize = int.MaxValue;
-
-                if (controlSet.Count == 0)
-                    throw new InvalidOperationException("Cannot calculate rows from no controls");
-
-                VirtualCell? smallestControl = null;
-
-                var controlsNotConfiguredAsFloating = new HashSet<VirtualCell>();
-                var controlsConfiguredAsFloating = new HashSet<VirtualCell>();
-
-
-                foreach (var control in controlSet)
-                {
-                    if (control.Object.Floating)
-                    {
-                        controlsConfiguredAsFloating.Add(control);
-
-                        continue;
-                    }
-                    controlsNotConfiguredAsFloating.Add(control);
-
-                    if (control.Height < smallestSize)
-                    {
-                        smallestSize = control.Height;
-                        smallestControl = control;
-                    }
-                }
-                floatingControlSet.AddRange(controlsConfiguredAsFloating);
-
-                if (smallestControl is null && controlsNotConfiguredAsFloating.Count > 0)
-                {
-                    throw new NullReferenceException("Could not determine the smallest control in the set");
-                }
-
-
-                var equal = new List<VirtualCell>();
-                var larger = new List<VirtualCell>();
-
-                string? newBand = null;
-
-                // determine which controls are same height and which are larger
-                foreach (var control in controlsNotConfiguredAsFloating)
-                {
-                    if (control.Height == smallestControl.Height)
-                        equal.Add(control);
-                    else
-                    {
-                        //control.Y -= ySkew;
-                        larger.Add(control);
-                    }
-                    if (newBand is not null && newBand != control.Object.Band)
-                    {
-                        throw new DwBandException(control.Object.Name, newBand, control.Object.Band);
-                    }
-                    newBand = control.Object.Band;
-                }
-
-                if (newBand is null)
-                {
-                    if (controlsConfiguredAsFloating.Count == 0)
-                    {
-                        throw new InvalidOperationException("No controls to process. This should not happen.");
-                    }
-
-                    newBand = controlsConfiguredAsFloating.First().Object.Band;
-                }
-
-                currentBand = newBand;
-
-                if (previousBand is not null && currentBand != previousBand)
-                {
-                    rowsPerBand[previousBand] = rowsInCurrentBand;
-
-
-                    /// Create empty row to fill the rest of the band's space
-                    int bandHeight = bands.Where(b => b.Name == previousBand).Single().Bound;
-                    int rowBandDiff = bandHeight - rowsPerBand[previousBand].LastOrDefault()?.Bound ?? bandHeight;
-                    if (rowBandDiff > YThreshold)
-                    {
-                        currentRow = new RowDefinition()
-                        {
-                            Size = rowBandDiff,
-                            PreviousEntity = previousRow,
-                            IsFiller = true,
-                            BandName = previousBand,
-                        };
-
-                        if (previousRow is not null)
-                        {
-                            previousRow.NextEntity = currentRow;
-                        }
-
-                        rowsInCurrentBand.Add(currentRow);
-                    }
-                    if (simplifyBand && SimplifyBand(previousBand, rowsInCurrentBand))
-                    {
-                        previousRow = rowsInCurrentBand[rowsInCurrentBand.Count - 1];
-                    }
-                    previousBand = currentBand;
-                    rowsInCurrentBand = new List<RowDefinition>();
-                }
-
-                bool repeat;
-                if (controlsNotConfiguredAsFloating.Any()) do
-                    { // this loop saves code when inserting a blank row
-                        repeat = false;
-
-                        // difference between previous row and current control set
-                        int distanceToPreviousRowEnd = (y - previousRow?.Bound ?? 0);
-                        int distanceToPreviousRowStart = (y - previousRow?.Offset ?? 0);
-                        int rowHeightModifier = 0;
-                        if (previousRow is null || (distanceToPreviousRowEnd >= -YThreshold && distanceToPreviousRowEnd <= YThreshold))
-                        {
-                            rowHeightModifier = (int)Math.Ceiling(distanceToPreviousRowEnd * 0.5);
-
-                            if (previousRow is not null)
-                            {
-                                previousRow.Size += (int)Math.Floor(distanceToPreviousRowEnd * 0.5);
-                                foreach (var obj in previousRow.Objects)
-                                {
-                                    obj.Height += rowHeightModifier;
-                                }
-                                previousRow.CompensatingSkew = true;
-                            }
-
-
-                            currentRow = new RowDefinition()
-                            {
-                                PreviousEntity = previousRow,
-                                Size = smallestControl.Height + rowHeightModifier,
-                                CompensatingSkew = rowHeightModifier != 0,
-                                Objects = equal,
-                                //FloatingObjects = larger,
-                                BandName = currentBand,
-                            };
-
-                            equal.ForEach(obj =>
-                            {
-                                obj.Y -= rowHeightModifier;
-                                obj.Height += rowHeightModifier;
-                            });
-
-                            equal.AssignToEntity(currentRow);
-                            larger.AssignToEntity(currentRow);
-                            floatingControlSet.AddRange(larger);
-                            rowsInCurrentBand.Add(currentRow);
-                        }
-                        else if (distanceToPreviousRowEnd < 0)
-                        { // if Y is inside the bounds of previous control, make the set float in the previous row
-                            currentRow = previousRow;
-                            //currentRow.FloatingObjects.AddRange(controlSet);
-                            var controlsToAddToPreviousRow = controlsNotConfiguredAsFloating.Where(
-                                c => c.Height == previousRow.Size
-                                                && distanceToPreviousRowStart < YThreshold)
-                                .ToList();
-                            controlsToAddToPreviousRow.AssignToEntity(previousRow);
-                            previousRow.Objects.AddRange(controlsToAddToPreviousRow);
-                            floatingControlSet.AddRange(controlsNotConfiguredAsFloating.Except(controlsToAddToPreviousRow));
-                            equal.AssignToEntity(currentRow);
-                            larger.AssignToEntity(currentRow);
-
-                            previousRow = currentRow.PreviousEntity;
-                        }
-                        else
-                        { // controlset is too far from the previous row, create intermediate row
-                            currentRow = new RowDefinition
-                            {
-                                PreviousEntity = previousRow,
-                                Size = distanceToPreviousRowEnd,
-                                BandName = currentBand,
-                                IsFiller = true,
-                            };
-                            rowsInCurrentBand.Add(currentRow);
-                            repeat = true;
-                        }
-                        if (previousRow is not null)
-                            previousRow.NextEntity = currentRow;
-
-
-                        currentRow.SortControlsByX();
-                        previousRow = currentRow;
-
-                    } while (repeat);
-
-                previousBand = currentBand;
-            }
-
-
-
-            if (previousBand is not null)
-            {
-                rowsPerBand[previousBand] = rowsInCurrentBand;
-
-                int bandHeight = bands.Where(b => b.Name == previousBand).Single().Bound;
-                int rowBandDiff = bandHeight - rowsPerBand[previousBand].LastOrDefault()?.Bound ?? bandHeight;
-                if (rowBandDiff > YThreshold)
-                {
-                    currentRow = new RowDefinition()
-                    {
-                        Size = rowBandDiff,
-                        PreviousEntity = previousRow,
-                        IsFiller = true,
-                        BandName = previousBand,
-                    };
-
-                    if (previousRow is not null)
-                    {
-                        previousRow.NextEntity = currentRow;
-                    }
-
-                    rowsInCurrentBand.Add(currentRow);
-                }
-                if (simplifyBand && SimplifyBand(previousBand, rowsInCurrentBand))
-                {
-                    previousRow = rowsInCurrentBand[rowsInCurrentBand.Count - 1];
-                }
-            }
-
-
-
-            return (currentRow?.ChainToList() ?? new List<RowDefinition>(), rowsPerBand, floatingControlSet);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="band"></param>
-        /// <param name="rowsInBand"></param>
-        /// <returns>true if user needs to update the last row reference</returns>
-        private static bool SimplifyBand(string band, IList<RowDefinition> rowsInBand)
-        {
-
-            if ((band == "detail" || band == "header")
-                && rowsInBand.Count == 3
-                && rowsInBand[0].IsFiller
-                && rowsInBand[2].IsFiller
-                && !rowsInBand[0].IsPadding
-                && !rowsInBand[2].IsPadding)
-            {
-                rowsInBand[1].Size += (rowsInBand[0].Size + rowsInBand[2].Size);
-                rowsInBand[1].PreviousEntity = rowsInBand[0].PreviousEntity;
-                if (rowsInBand[0].PreviousEntity is not null)
-                {
-                    rowsInBand[0].PreviousEntity!.NextEntity = rowsInBand[1];
-                }
-
-                rowsInBand[1].NextEntity = rowsInBand[2].NextEntity;
-                if (rowsInBand[2].NextEntity is not null)
-                {
-                    rowsInBand[2].NextEntity!.PreviousEntity = rowsInBand[1];
-                }
-
-                rowsInBand.Remove(rowsInBand[2]);
-                rowsInBand.Remove(rowsInBand[0]);
-                return true;
-            }
-            if ((band == "detail" || band == "header")
-                && rowsInBand.Count == 2
-                && !rowsInBand[0].IsPadding
-                && !rowsInBand[1].IsPadding)
-            {
-
-                if (rowsInBand[0].IsFiller)
-                {
-                    rowsInBand[1].Size += (rowsInBand[0].Size);
-                    if (rowsInBand[0].PreviousEntity is not null)
-                    {
-                        rowsInBand[0].PreviousEntity!.NextEntity = rowsInBand[1];
-                    }
-                    rowsInBand[1].PreviousEntity = rowsInBand[0].PreviousEntity;
-                    rowsInBand.Remove(rowsInBand[0]);
-                    return false;
-                }
-                else
-                {
-                    rowsInBand[0].Size += (rowsInBand[1].Size);
-                    if (rowsInBand[1].NextEntity is not null)
-                    {
-                        rowsInBand[1].NextEntity!.PreviousEntity = rowsInBand[0];
-                    }
-                    rowsInBand[0].NextEntity = rowsInBand[1].NextEntity;
-                    rowsInBand.Remove(rowsInBand[1]);
-                    return true;
-                }
-            }
-
-            return false;
-        }
 
         /// <summary>
         /// Define the rows 
@@ -712,209 +422,471 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
         /// <param name="floatingControls">List of floating controls that will be excluded from calculations. Items might
         /// be added to this list if they overlap with other controls on Y</param>
         /// <returns></returns>
-        private IList<ColumnDefinition> DefineColumns(
-                SortedList<int, ISet<VirtualCell>> controls,
-                ISet<VirtualCell> floatingControls
-            )
+        private (IList<RowDefinition> rows,
+            IDictionary<string, IList<RowDefinition>> rowsPerBand,
+            ISet<VirtualCell> floatingObjects)
+            DefineRows(
+            SortedList<int, IList<VirtualCell>> objectsByY,
+            IList<DwBand> bands)
         {
+            var candidateRowMap = new Dictionary<int, IList<RowCandidate>>();
+            Dictionary<string, HashSet<RowCandidate>> rowsPerBandDictionary = new();
+            IDictionary<string, IList<RowDefinition>> rowdefinitionsPerBand = new Dictionary<string, IList<RowDefinition>>();
 
-            var columns = new List<ColumnDefinition>();
-            ColumnDefinition? workingColumn;
-
-            foreach (var (x, controlSet) in controls)
+            foreach (var band in bands)
             {
-                foreach (var control in controlSet)
+                rowsPerBandDictionary[band.Name] = new();
+                rowdefinitionsPerBand[band.Name] = new List<RowDefinition>();
+            }
+
+            /// Normalize y positions based on the YThreshold value
+            var normalizedObjectsByY = new SortedList<int, IList<VirtualCell>>();
+            int delta;
+            foreach (var (y, objects) in objectsByY)
+            {
+                int previousY = normalizedObjectsByY.LastOrDefault().Key;
+                delta = y - (previousY);
+
+                if (delta <= YThreshold)
                 {
-                    // skip floating controls
-                    if (floatingControls.Contains(control))
+                    if (!normalizedObjectsByY.ContainsKey(previousY))
+                        normalizedObjectsByY[previousY] = new List<VirtualCell>();
+
+                    foreach (var @object in objects)
+                    {
+                        @object.Y -= delta;
+                    }
+                    ((List<VirtualCell>)normalizedObjectsByY[previousY]).AddRange(objects);
+                }
+                else
+                {
+                    if (!normalizedObjectsByY.ContainsKey(y))
+                        normalizedObjectsByY[y] = objects;
+                    else
+                        ((List<VirtualCell>)normalizedObjectsByY[y]).AddRange(objects);
+                }
+
+            }
+
+
+            var floatingObjects = new HashSet<VirtualCell>();
+
+            /// Create candidate rows from the objects. Objects starting in the
+            /// same Y and having the same size will be aggregated.
+            foreach (var (y, objects) in normalizedObjectsByY)
+            {
+                if (!candidateRowMap.ContainsKey(y))
+                {
+                    candidateRowMap[y] = new List<RowCandidate>();
+                }
+
+                foreach (var @object in objects)
+                {
+                    if (@object.Object.Floating || @object.Object.Band == "foreground" || @object.Object.Band == "background")
+                    {
+                        floatingObjects.Add(@object);
                         continue;
+                    }
+                    var candidateRow = candidateRowMap[y]
+                        .Where(candidate => candidate.Offset == y)
+                        .OrderBy(candidate => Math.Abs(candidate.Height - @object.Height))
+                        .FirstOrDefault();
 
-
-                    var overlappingColumns = columns.Count > 0 ? GetOverlappingColumns(columns.First(), control) : null;
-                    if (overlappingColumns is null || overlappingColumns.Columns.Count == 0)
-                    { // No overlapping columns, object must be separated 
-                        bool repeat;
-                        do
+                    if (candidateRow is null || Math.Abs(candidateRow.Height - @object.Height) > YThreshold)
+                    {
+                        candidateRowMap[y].Add(candidateRow = new RowCandidate
                         {
-                            repeat = false;
-
-                            var previousColumn = columns.LastOrDefault();
-                            int dx = control.X - (previousColumn?.Bound ?? 0);
-                            workingColumn = new ColumnDefinition()
+                            Offset = y,
+                            Height = @object.Height,
+                            Objects = new List<VirtualCell>()
                             {
-                                Size = dx
-                            };
+                                @object
+                            },
+                            Band = @object.Object.Band
+                        });
 
-                            if (dx <= XThreshold)
-                            {
-                                workingColumn.Objects = new List<VirtualCell>() { control };
-                                workingColumn.Size = control.Width + dx;
-                                control.OwningColumn = workingColumn;
-                            }
-                            else
-                            {
-                                repeat = true;
-                                workingColumn.IsFiller = true;
-                            }
-                            workingColumn.PreviousEntity = previousColumn;
-                            if (previousColumn is not null)
-                            {
-                                previousColumn.NextEntity = workingColumn;
-                            }
-
-                            columns.Add(workingColumn);
-
-                        } while (repeat);
+                        rowsPerBandDictionary[@object.Object.Band].Add(candidateRow);
                     }
                     else
-                    { // overlapping columns
-
-                        var firstOverlappingColumn = overlappingColumns
-                                .Columns
-                                .First();
-
-                        var lastOverlappingColumn = overlappingColumns
-                                .Columns
-                                .Last();
-
-                        // we will need to correct the column span to accomodate for new columns
-                        int additionalSpan = 0;
-
-                        if (overlappingColumns.OffsetRight > XThreshold)
-                        { // control terminates inside a column, let's split that column
-                            workingColumn = lastOverlappingColumn
-                                .Split(lastOverlappingColumn.Size - overlappingColumns.OffsetRight);
-
-
-                            columns.Insert(columns.IndexOf(lastOverlappingColumn) + 1, workingColumn);
-                        }
-                        else if (overlappingColumns.OffsetRight >= -XThreshold && overlappingColumns.OffsetRight <= XThreshold)
-                        {
-                            // if control terminates on the border of a column, there's nothing to do
-                        }
-                        else
-                        { // if control terminates past the last overlapping column, we need to create a new column 
-                            if (lastOverlappingColumn.NextEntity is null)
-                            {
-                                workingColumn = new ColumnDefinition
-                                {
-                                    Size = -overlappingColumns.OffsetRight, // offsets are positive when inside the column
-                                                                            // and negative when outside
-                                    PreviousEntity = lastOverlappingColumn,
-                                };
-                                ++additionalSpan;
-                                lastOverlappingColumn.NextEntity = workingColumn;
-                            }
-                            else
-                            {
-                                throw new InvalidOperationException("Overlap didn't include next column even though offset indicates " +
-                                    "it should. This should not happen.");
-                            }
-                            columns.Insert(columns.IndexOf(lastOverlappingColumn) + 1, workingColumn);
-                        }
-
-
-                        if (overlappingColumns.OffsetLeft > XThreshold)
-                        {
-                            workingColumn = firstOverlappingColumn
-                                .Split(overlappingColumns.OffsetLeft);
-                            workingColumn.Objects.Add(control);
-                            control.OwningColumn = workingColumn;
-                            columns.Insert(columns.IndexOf(firstOverlappingColumn) + 1, workingColumn);
-                        }
-                        else if ((overlappingColumns.OffsetLeft >= -XThreshold && overlappingColumns.OffsetLeft <= XThreshold))
-                        {
-                            firstOverlappingColumn.Objects.Add(control);
-                            control.OwningColumn = firstOverlappingColumn;
-                        }
-                        else
-                        {
-
-                            /// There's no way to run into this condition because columns are created left-to-right and control
-                            /// processing is also done left-to-right, so it would have to be the first column 
-                            /// (which is managed on the first branch since at that point no columns have been created) 
-                            throw new InvalidOperationException("There cannot be an uncontained left-overlapping column");
-
-
-                            //if (firstOverlappingColumn.PreviousEntity is null)
-                            //{
-                            //    throw new InvalidOperationException("There cannot be an left-overlapping column without a previous column");
-                            //}
-                            //else
-                            //{
-                            //    throw new InvalidOperationException("There cannot be an left-overlapping column without a previous column");
-                            //    workingColumn = firstOverlappingColumn
-                            //        .PreviousEntity
-                            //        .Split(firstOverlappingColumn.PreviousEntity.Size - overlappingColumns.OffsetLeft);
-
-                            //    workingColumn.Objects.Add(control);
-                            //    control.OwningColumn = workingColumn;
-                            //    columns.Insert(columns.IndexOf(firstOverlappingColumn), workingColumn);
-                            //}
-                        }
-
-                        control.ColumnSpan = overlappingColumns.Columns.Count + additionalSpan;
+                    {
+                        delta = candidateRow.Height - @object.Height;
+                        @object.Height += delta;
+                        candidateRow.Objects.Add(@object);
                     }
 
                 }
             }
 
-            return columns;
+            var (fixedRows, floatingRows) =
+                GetRowCandidates(candidateRowMap
+                    .Values
+                    .Where(rowList => rowList.Count > 0)
+                    .SelectMany(row => row)
+                    .ToList());
+
+            var fixedRowsByY = fixedRows.OrderBy(row => row.Offset).ToList();
+            var filledRows = new List<RowCandidate>();
+
+
+            floatingObjects.AddRange(floatingRows.SelectMany(row => row.Objects));
+
+            ///
+            /// Fill up the empty space between each row
+            /// 
+            delta = 0;
+            RowCandidate? previousRow = null;
+
+            foreach (var rowCandidate in fixedRowsByY)
+            {
+                while ((delta = rowCandidate.Offset - (previousRow?.Bound ?? 0)) != 0)
+                {
+                    if (delta <= YThreshold)
+                    {
+                        rowCandidate.Offset -= delta;
+                        rowCandidate.Height += delta;
+                    }
+                    else
+                    {
+                        bool adjustedPreviousRow = false;
+                        int bandDelta = 0;
+                        if (previousRow is not null && previousRow.Band != rowCandidate.Band)
+                        {
+                            var band = bands.Where(b => b.Name == previousRow.Band).First();
+
+                            if ((bandDelta = band.Bound - previousRow.Bound) >= YThreshold)
+                            {
+                                previousRow = new RowCandidate()
+                                {
+                                    IsFiller = true,
+                                    Band = previousRow.Band,
+                                    Offset = previousRow.Bound,
+                                    Height = bandDelta,
+                                };
+                                filledRows.Add(previousRow);
+                            }
+                            else
+                            {
+                                previousRow.Height += bandDelta;
+                            }
+                            adjustedPreviousRow = true;
+
+                        }
+                        previousRow = new RowCandidate()
+                        {
+                            Offset = previousRow?.Bound ?? 0,
+                            Height = delta - bandDelta,
+                            IsFiller = true,
+                            Band = adjustedPreviousRow || previousRow is null ? rowCandidate.Band : previousRow.Band,
+                        };
+                        filledRows.Add(previousRow);
+                    }
+
+                }
+
+                filledRows.Add(rowCandidate);
+                previousRow = rowCandidate;
+            }
+
+            /// compensate difference between last row and end of band
+            var lastRow = filledRows.Last();
+            var lastBandDiff = bands.Where(b => b.Name == lastRow.Band).Single().Bound - lastRow.Bound;
+
+            if ((lastBandDiff <= YThreshold))
+            {
+                lastRow.Height += lastBandDiff;
+            }
+            else
+            {
+                filledRows.Add(new RowCandidate
+                {
+                    IsFiller = true,
+                    Band = lastRow.Band,
+                    Height = lastBandDiff,
+                    Offset = lastRow?.Bound ?? 0,
+                });
+            }
+
+            var rowDefinitions = new List<RowDefinition>();
+
+            RowDefinition? rowDef = null;
+            /// Row candidates are normalized, we can convert them direclty
+            /// 
+            foreach (var row in filledRows)
+            {
+                rowDefinitions.Add(rowDef = new RowDefinition()
+                {
+                    Objects = row.Objects,
+                    BandName = row.Band,
+                    IsFiller = row.IsFiller,
+                    PreviousEntity = rowDef,
+                    Size = row.Height,
+                });
+
+                foreach (var @object in row.Objects)
+                {
+                    @object.OwningRow = rowDef;
+                }
+
+                if (rowDef.PreviousEntity is not null)
+                    rowDef.PreviousEntity.NextEntity = rowDef;
+                if (rowDef.BandName is null)
+                {
+                    throw new InvalidOperationException("Row doesn't belong to any band");
+                }
+                rowdefinitionsPerBand[rowDef.BandName].Add(rowDef);
+
+
+            }
+
+            /// Sort Row's controls by X
+            foreach (var row in rowDefinitions)
+            {
+                ((List<VirtualCell>)(row.Objects)).Sort((a, b) => a.X - b.X);
+            }
+
+            return (rowDefinitions,
+                rowdefinitionsPerBand,
+                floatingObjects);
         }
+
 
 
         /// <summary>
-        /// Obtains the columns that a <see cref="VirtualCell"/> spans over
+        /// Define the rows 
         /// </summary>
-        /// <param name="startColumn">The first column in the chain to check</param>
-        /// <param name="cell"></param>
-        /// <returns>a <see cref="ColumnOverlap"/> defining the overlap</returns>
-        private static ColumnOverlap GetOverlappingColumns(ColumnDefinition startColumn, VirtualCell cell)
+        /// <param name="controls">List of controls ordered by X. Items might be removed from this list if they overlap with other
+        /// controls on Y</param>
+        /// <param name="floatingControls">List of floating controls that will be excluded from calculations. Items might
+        /// be added to this list if they overlap with other controls on Y</param>
+        /// <returns></returns>
+        /// 
+        private IList<ColumnDefinition> DefineColumns(
+            SortedList<int, IList<VirtualCell>> controls,
+            ISet<VirtualCell> floatingControls)
         {
-            var overlapChain = new List<ColumnDefinition>();
-            int cellLeftBound = cell.X;
-            int cellRightBound = cellLeftBound + cell.Width;
+            var normalizedList = new SortedDictionary<int, IList<VirtualCell>>();
 
-            int leftOffset = 0; // positive when cell starts inside column
-            int? rightOffset = null;
-            bool chainBegun = false;
-            bool chainComplete = false;
+            int rightmostBound
 
-            ColumnDefinition? previousColumn = null;
-            ColumnDefinition? currentColumn = startColumn;
-            while (currentColumn is not null && !chainComplete)
+                = Math.Max(
+                controls.Values
+                    .SelectMany(c => c)
+                    .Max(c => c.RightBound),
+                floatingControls
+                    .DefaultIfEmpty()
+                    .Max(c => c?.RightBound ?? 0));
+
+            /// Normalize controls based on the XThreshold
+            int lastX = 0;
+            int delta;
+            foreach (var (x, controlSet) in controls)
             {
-                if (!chainBegun)
+                if ((delta = x - normalizedList.LastOrDefault().Key) <= XThreshold && delta != 0)
                 {
-                    if (cellRightBound < currentColumn.Bound
-                        || (cellLeftBound >= currentColumn.Offset
-                            && cellLeftBound < currentColumn.Bound))
+                    if (!normalizedList.ContainsKey(lastX))
                     {
-                        leftOffset = cellLeftBound - currentColumn.Offset;
-                        chainBegun = true;
+                        normalizedList[lastX] = new List<VirtualCell>();
                     }
+
+                    foreach (var control in controlSet)
+                    {
+                        control.X -= delta;
+                    }
+
+                    ((List<VirtualCell>)normalizedList[lastX]).AddRange(controlSet);
+                }
+                else
+                {
+                    normalizedList[x] = controlSet;
+                    lastX = x;
                 }
 
-                if (chainBegun)
-                {
-                    if (cellRightBound <= currentColumn.Bound)
-                    {
-                        rightOffset = currentColumn.Bound - cellRightBound;
-                        chainComplete = true;
-                    }
-                    overlapChain.Add(currentColumn);
-                }
-
-                previousColumn = currentColumn;
-                currentColumn = currentColumn.NextEntity;
+                lastX = x;
             }
-            rightOffset ??= previousColumn?.Bound - cellRightBound;
 
-            var overlap = new ColumnOverlap(overlapChain, leftOffset, rightOffset ?? -1);
+            var normalizedFiltered = new SortedDictionary<int, IList<VirtualCell>>();
+            /// Remove floating controls from the control list, and order them by Width
+            foreach (var x in normalizedList.Keys)
+            {
+                normalizedFiltered[x] = normalizedList[x]
+                    .Where(c => !floatingControls.Any(c1 => c1 == c))
+                    .OrderBy(c => c.Width)
+                    .ToList();
+            }
 
-            return overlap;
+            List<int> boundaries = new() { 0 };
+            /// Calculate all boundaries of all controls, 
+            foreach (var (x, controlSet) in normalizedFiltered)
+            {
+                boundaries.Add(x);
+
+                foreach (var control in controlSet)
+                {
+                    boundaries.Add(control.RightBound);
+                }
+            }
+            boundaries.Sort();
+            boundaries = boundaries.Distinct().ToList();
+
+            var columnDefinitions = new List<ColumnDefinition>();
+
+            /// Assign a column into each boundary interval
+            Dictionary<int, ColumnDefinition> columnOffsetIndex = new();
+            Dictionary<int, ColumnDefinition> columnBoundIndex = new();
+            ColumnDefinition? previousColumn = null;
+            int previousBoundary = -1;
+            foreach (var boundary in boundaries)
+            {
+                if (previousBoundary == -1)
+                {
+                    previousBoundary = boundary;
+                    continue;
+                }
+
+                columnDefinitions.Add(previousColumn = new ColumnDefinition
+                {
+                    PreviousEntity = previousColumn,
+                    IsFiller = true,
+                    Size = boundary - previousBoundary,
+                });
+                columnOffsetIndex[previousBoundary] = previousColumn;
+                columnBoundIndex[boundary] = previousColumn;
+
+                previousBoundary = boundary;
+            }
+
+            for (int i = columnDefinitions.Count - 1; i > 0; --i)
+            {
+                if (columnDefinitions[i].PreviousEntity is not null)
+                {
+                    columnDefinitions[i].PreviousEntity!.NextEntity = columnDefinitions[i];
+                }
+            }
+
+            List<VirtualCell> unmappedCells = new();
+            /// Remap all controls to the columns
+            foreach (var controlList in normalizedFiltered.Values)
+            {
+                foreach (var control in controlList)
+                {
+                    var startColumn = columnOffsetIndex[control.X];
+                    var endColumn = columnBoundIndex[control.RightBound];
+
+                    if (startColumn is null)
+                        throw new InvalidOperationException("Could not find Offset Column for control");
+                    if (endColumn is null)
+                        throw new InvalidOperationException("Could not find Bound Column for control");
+
+                    control.ColumnSpan = 1 + endColumn.IndexOffset - startColumn.IndexOffset;
+                    control.OwningColumn = startColumn;
+                    startColumn.Objects.Add(control);
+                    startColumn.IsFiller = false;
+                }
+            }
+
+            if (unmappedCells.Count > 0)
+            {
+                throw new InvalidOperationException("Controls not mapped to any column.");
+            }
+
+
+            /// Disolve columns that are smaller than threshold value
+            var columnsToDelete = new List<ColumnDefinition>();
+            foreach (var column in columnDefinitions)
+            {
+
+                if (column.Size < XThreshold)
+                {
+                    columnsToDelete.Add(column);
+                    /// Adjust ColumnSpan values for all previous rows's objects
+                    ColumnDefinition? columnRef = column.PreviousEntity;
+                    int spanRef = 2;
+                    if (columnRef is not null)
+                    {
+                        columnRef.Size += column.Size;
+                    }
+                    while (columnRef is not null)
+                    {
+                        foreach (var @object in columnRef.Objects)
+                        {
+                            if (@object.ColumnSpan >= spanRef)
+                                --@object.ColumnSpan;
+                        }
+
+                        ++spanRef;
+                        columnRef = columnRef.PreviousEntity;
+                    }
+
+                    if (column.NextEntity is null && column.Objects.Any())
+                        throw new InvalidOperationException("Attempting to dissolve non-empty column without right-side replacement");
+
+                    foreach (var @object in column.Objects)
+                    {
+                        @object.OwningColumn = column.NextEntity;
+                        column.NextEntity!.Objects.Add(@object);
+                        if (@object.ColumnSpan == 1)
+                            throw new InvalidOperationException("Attempting to disolve column with unmovable object");
+                        else
+                            --@object.ColumnSpan;
+                        @object.X = column.NextEntity.Offset;
+                        @object.Width -= column.Size;
+                    }
+
+                    if (column.PreviousEntity is not null)
+                    {
+                        column.PreviousEntity.NextEntity = column.NextEntity;
+                    }
+                    if (column.NextEntity is not null)
+                        column.NextEntity.PreviousEntity = column.PreviousEntity;
+
+                    column.PreviousEntity = null;
+                    column.NextEntity = null;
+                    column.Objects.Clear();
+                }
+            }
+            foreach (var column in columnsToDelete)
+            {
+                columnDefinitions.Remove(column);
+            }
+
+            var lastColumn = columnDefinitions.Last();
+            lastColumn.RecalculateChainOffsets();
+            int paddingRequired = rightmostBound - lastColumn.Bound;
+
+            if (paddingRequired <= XThreshold)
+            {
+                lastColumn.Size += paddingRequired;
+
+                /// Adjust all previous object's widths to match the column adjustment
+                int colRef = 1;
+                ColumnDefinition? currentColumn = lastColumn;
+                while (currentColumn is not null)
+                {
+                    foreach (var @object in currentColumn.Objects)
+                    {
+                        if (@object.ColumnSpan >= colRef)
+                            @object.Width += paddingRequired;
+                    }
+
+                    currentColumn = currentColumn.PreviousEntity;
+                    ++colRef;
+                }
+            }
+            else
+            {
+                var newColumn = new ColumnDefinition
+                {
+                    PreviousEntity = lastColumn,
+                    Size = paddingRequired,
+                    IsPadding = true,
+                };
+                columnDefinitions.Add(newColumn);
+
+                lastColumn.NextEntity = newColumn;
+            }
+
+            return columnDefinitions;
         }
-
 
         private static FloatingCellOffset? MapFloatingControl(IList<ColumnDefinition> columns, IList<RowDefinition> rows, VirtualCell cell)
         {

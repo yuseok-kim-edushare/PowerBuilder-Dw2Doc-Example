@@ -16,11 +16,11 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
             set { _previousDataSet0 = value; }
         }
 
-        private readonly List<BandRows> _bandsWithoutRelatedHeaders;
-        private readonly ISet<string> _unrepeatableBands;
+        private List<BandRows> _bandsWithoutRelatedHeaders;
+        private ISet<string> _unrepeatableBands;
+        private Dictionary<string, bool> _bandsWithChanges = new();
         private int _currentBandIndex;
         private BandRows? _currentBandRow;
-        private readonly Dictionary<string, bool> _bandsWithChanges = new();
 
         protected AbstractVirtualGridWriter(VirtualGrid.VirtualGrid virtualGrid)
         {
@@ -162,6 +162,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
                 }
 
                 exportedCells = ProcessNextLine(dataSet, _bandsWithChanges.Keys.ToList());
+                PreviousDataSet?.Clear();
                 PreviousDataSet = dataSet;
 
                 return exportedCells;
@@ -171,6 +172,20 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
                 error = e.Message;
                 return null;
             }
+        }
+
+        public void Dispose()
+        {
+
+            _previousDataSet0?.Clear();
+            _bandsWithChanges.Clear();
+            _bandsWithoutRelatedHeaders.Clear();
+            _unrepeatableBands.Clear();
+            _previousDataSet0 = null;
+            _bandsWithoutRelatedHeaders = null;
+            _unrepeatableBands = null;
+            _bandsWithChanges = null;
+
         }
 
         protected abstract IList<ExportedCellBase>? WriteRows(IList<RowDefinition> rows, IDictionary<string, DwObjectAttributesBase> data);

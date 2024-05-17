@@ -51,8 +51,8 @@ All the code for the conversion is contained inside the *dw2doc.pbl* library. Ma
 
 - Determine the amount and height of the DW's bands.
 - Iterate over the controls and determine the band that contains them.
-- Iterate over each band and control and define a row layout that fits the controls and bands. There are some DWOs that cannot be put inside cells (bitmap, line, geometric shapes), these are created as shapes and anchored to the closest cell. If it's impossible to put two objects into their own row, one of them is converted to a Text Box shape and anchored to the closest cell.
-- Iterate over each control and define a column layout that fits the controls and bands. If two controls overlap on the X axis, it will attempt to create additional columns and merge them to accommodate them. After this step the application created a `VirtualGrid` that defines the objects positions' in terms or rows and columns.
+- Iterate over each band and control and define a row layout that fits the controls and bands. There are some DWOs that cannot be put inside cells (bitmap, line, geometric shapes), these are created as shapes and anchored to the closest cell. If it's impossible to put two objects into their own row, one of them is converted to a Text Box shape and anchored to the closest cell (These are regarded as Floating Objects). Rows containing multiple objects of the same size will be prioritized when determining which will be floating.
+- Iterate over each control and define a column layout that fits the controls and bands. It determines all object's bounds and creates a column for each pair; then determines the column/span of each object, and finally dissolves all columns smaller than the defined `XThreshold` value. After this step the application created a `VirtualGrid` that defines the objects positions' in terms or rows and columns.
 - The application then iterates over each DW row, and using the created `VirtualGrid` maps each row value's to a control building an XSSFWorkbook.
 - Then it saves this XSSFWorkbook to disk.
 

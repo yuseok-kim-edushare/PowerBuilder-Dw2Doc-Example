@@ -16,5 +16,30 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes
         {
             Floating = true;
         }
+
+        // override object.Equals
+        public override bool Equals(object obj)
+        {
+            return base.Equals(obj)
+                && obj is DwShapeAttributes that
+                && that.Shape == this.Shape
+                && that.FillColor.Equals(this.FillColor)
+                && FillStyle == that.FillStyle
+                && OutlineColor == that.OutlineColor
+                && OutlineStyle == that.OutlineStyle
+                && OutlineWidth == that.OutlineWidth;
+        }
+
+        // override object.GetHashCode
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Shape
+                , FillColor
+                , FillColor
+                , OutlineColor
+                , OutlineStyle
+                , OutlineWidth
+                );
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
+﻿using Appeon.DotnetDemo.Dw2Doc.Common.Constants;
+using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
 using Appeon.DotnetDemo.Dw2Doc.Common.Utils.CodeTable;
 using Appeon.DotnetDemo.Dw2Doc.Xlsx.Extensions;
 using Appeon.DotnetDemo.Dw2Doc.Xlsx.Models;
@@ -7,7 +8,7 @@ using NPOI.XSSF.UserModel;
 
 namespace Appeon.DotnetDemo.Dw2Doc.XlsxTester.AttributeTester;
 
-[TesterForAttribute(typeof(DwRadioButtonAttributes), typeof(RadioButtonTester))]
+[TesterFor(typeof(DwRadioButtonAttributes), typeof(RadioButtonTester))]
 public class RadioButtonTester : AbstractAttributeTester<DwRadioButtonAttributes>
 {
     protected override AttributeTestResultCollection TestCell(DwRadioButtonAttributes attr, ExportedCell cell)
@@ -70,12 +71,12 @@ public class RadioButtonTester : AbstractAttributeTester<DwRadioButtonAttributes
                 font.IsStrikeout.ToString()));
 
             testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "is underline",
-                attr.Underline.ToString(),
+                attr.Underline ? "Single" : "None",
                 font.Underline.ToString()));
 
             testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "background color",
                 attr.BackgroundColor.Value.ToRgb().ToString(),
-                style.FillForegroundColor.ToString()));
+                style.FillForegroundColorColor.RGB.ToColor().ToRgb().ToString()));
 
             testResults.Add(new AttributeTestResult(cell.Cell.Object.Name, "background transparent",
                 (attr.BackgroundColor.Value.A == 0).ToString(),
@@ -89,9 +90,8 @@ public class RadioButtonTester : AbstractAttributeTester<DwRadioButtonAttributes
                 attr.LeftText.ToString(),
                 (cell.OutputCell.StringCellValue[0] switch
                 {
-                    '✅' => true,
-                    '☐' => true,
-                    _ => false
+                    RendererConstants.RadioButtonSelected or RendererConstants.RadioButtonUnselected => false,
+                    _ => true
                 }).ToString()));
 
             break;
@@ -179,7 +179,7 @@ public class RadioButtonTester : AbstractAttributeTester<DwRadioButtonAttributes
                 attr.LeftText.ToString(),
                 (run.Text[0] switch
                 {
-                    '◉' or '⊙' => false,
+                    RendererConstants.RadioButtonSelected or RendererConstants.RadioButtonUnselected => false,
                     _ => true
                 }).ToString()));
 

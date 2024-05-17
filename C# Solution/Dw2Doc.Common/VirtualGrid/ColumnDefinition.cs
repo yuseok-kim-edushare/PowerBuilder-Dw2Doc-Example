@@ -23,38 +23,39 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
             {
                 Size = originalSize - at,
                 PreviousEntity = this,
-                NextEntity = NextEntity
+                NextEntity = NextEntity,
             };
 
             if (NextEntity is not null)
                 NextEntity.PreviousEntity = newColumn;
 
-            // Update IndexOffset on columns ahead
-            var nextColumn = NextEntity;
-            while (nextColumn is not null)
-            {
-                nextColumn.IndexOffset = nextColumn.PreviousEntity!.IndexOffset + 1;
-                nextColumn = nextColumn.NextEntity;
-            }
-
             NextEntity = newColumn;
 
-            var currentCol = this;
+            // Update IndexOffset on columns ahead
+            var refCol = NextEntity;
+            int currentIndex = IndexOffset;
+            while (refCol is not null)
+            {
+                refCol.IndexOffset = currentIndex++;
+                refCol = refCol.NextEntity;
+            }
+
             int reference = 1;
 
-            while (currentCol is not null)
+            refCol = this;
+            while (refCol is not null)
             {
-                for (int i = 0; i < currentCol.Objects.Count; ++i)
+                foreach (var cell in refCol.Objects)
                 {
 
-                    if (currentCol.Objects[i].ColumnSpan >= reference)
+                    if (cell.ColumnSpan >= reference)
                     {
-                        ++currentCol.Objects[i].ColumnSpan;
+                        ++cell.ColumnSpan;
                     }
                 }
 
                 ++reference;
-                currentCol = currentCol.PreviousEntity;
+                refCol = refCol.PreviousEntity;
             }
 
             return newColumn;

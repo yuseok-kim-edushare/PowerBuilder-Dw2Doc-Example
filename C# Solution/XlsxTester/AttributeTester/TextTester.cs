@@ -1,8 +1,11 @@
 ﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
 using Appeon.DotnetDemo.Dw2Doc.Xlsx.Extensions;
 using Appeon.DotnetDemo.Dw2Doc.Xlsx.Models;
+using Appeon.DotnetDemo.Dw2Doc.XlsxTester.Exceptions;
 using Appeon.DotnetDemo.Dw2Doc.XlsxTester.Models;
+using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using System.Globalization;
 
 namespace Appeon.DotnetDemo.Dw2Doc.XlsxTester.AttributeTester;
 
@@ -13,113 +16,132 @@ public class TextTester : AbstractAttributeTester<DwTextAttributes>
     {
         var testResults = TestCellBase(attr, cell);
 
-        testResults.Add(new(
-            cell.Cell.Object.Name,
-                "output cell",
-                NonNullString,
-                cell.OutputCell is null ? NullString : NonNullString
-            ));
-
-        while (cell.OutputCell is not null)
+        try
         {
-            var cellStyle = cell.OutputCell.CellStyle as XSSFCellStyle;
             testResults.Add(new(
                 cell.Cell.Object.Name,
-                "has style",
-                bool.TrueString,
-                (cellStyle is not null).ToString()
-            ));
-
-            if (cellStyle is null)
-            {
-                break;
-            }
-
-            var font = cellStyle.GetFont();
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "has font",
-                bool.TrueString,
-                (font is not null).ToString()
-            ));
-
-            if (font is null)
-                break;
-
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "font height",
-                (attr.FontSize - 1).ToString(),
-                font.FontHeightInPoints.ToString()
-            ));
-
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "font name",
-                attr.FontFace,
-                font.FontName
-            ));
-
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "font color",
-                attr.FontColor.Value.ToRgb().ToString(),
-                font.Color.ToString()
-            ));
-
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "is bold",
-                (attr.FontWeight >= 700).ToString(),
-                font.IsBold.ToString()
-            ));
-
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "is italic",
-                attr.Italics.ToString(),
-                font.IsItalic.ToString()
-            ));
-
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "is strikethrough",
-                attr.Strikethrough.ToString(),
-                font.IsStrikeout.ToString()
-            ));
-
-            bool transparentBg = (attr.BackgroundColor.Value.A == 0);
-
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "background transparent",
-                transparentBg.ToString(),
-                (cellStyle.FillPattern == NPOI.SS.UserModel.FillPattern.NoFill).ToString()
-            ));
-
-            if (!transparentBg)
-                testResults.Add(new(
-                    cell.Cell.Object.Name,
-                    "background color",
-                    attr.BackgroundColor.Value.ToRgb().ToString(),
-                    cellStyle.FillForegroundColor.ToString()
+                    "output cell",
+                    NonNullString,
+                    cell.OutputCell is null ? NullString : NonNullString
                 ));
 
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "alignment",
-                attr.Alignment.ToNpoiHorizontalAlignment().ToString().ToLower(),
-                cellStyle.Alignment.ToString().ToLower()
-            ));
+            /// Using while loop because we might want to exit the block in the middle
+            while (cell.OutputCell is not null)
+            {
+                var cellStyle = cell.OutputCell.CellStyle as XSSFCellStyle;
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "has style",
+                    bool.TrueString,
+                    (cellStyle is not null).ToString()
+                ));
 
-            testResults.Add(new(
-                cell.Cell.Object.Name,
-                "text",
-                attr.Text,
-                cell.OutputCell.StringCellValue
-            ));
+                if (cellStyle is null)
+                {
+                    break;
+                }
 
-            break;
+                var font = cellStyle.GetFont();
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "has font",
+                    bool.TrueString,
+                    (font is not null).ToString()
+                ));
+
+                if (font is null)
+                    break;
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "font height",
+                    (attr.FontSize - 1).ToString(),
+                    font.FontHeightInPoints.ToString()
+                ));
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "font name",
+                    attr.FontFace,
+                    font.FontName
+                ));
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "font color",
+                    attr.FontColor.Value.ToRgb().ToString(),
+                    font.Color.ToString()
+                ));
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "is bold",
+                    (attr.FontWeight >= 700).ToString(),
+                    font.IsBold.ToString()
+                ));
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "is italic",
+                    attr.Italics.ToString(),
+                    font.IsItalic.ToString()
+                ));
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "is strikethrough",
+                    attr.Strikethrough.ToString(),
+                    font.IsStrikeout.ToString()
+                ));
+
+                bool transparentBg = (attr.BackgroundColor.Value.A == 0);
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "background transparent",
+                    transparentBg.ToString(),
+                    (cellStyle.FillPattern == NPOI.SS.UserModel.FillPattern.NoFill).ToString()
+                ));
+
+                if (!transparentBg)
+                    testResults.Add(new(
+                        cell.Cell.Object.Name,
+                        "background color",
+                        attr.BackgroundColor.Value.ToRgb().ToString(),
+                        cellStyle.FillForegroundColor.ToString()
+                    ));
+
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "alignment",
+                    attr.Alignment.ToNpoiHorizontalAlignment().ToString().ToLower(),
+                    cellStyle.Alignment.ToString().ToLower()
+                ));
+
+
+                DataFormatter formatter = new(CultureInfo.CurrentCulture);
+                testResults.Add(new(
+                    cell.Cell.Object.Name,
+                    "text",
+                    attr.Text,
+                    attr.DataType switch
+                    {
+                        Common.Enums.DataType.Default => cell.OutputCell.StringCellValue,
+                        Common.Enums.DataType.Number or Common.Enums.DataType.Money => formatter.FormatCellValue(cell.OutputCell),
+                        _ => throw new AttributeTestException($"Unsupported cell type: {attr.DataType}", cell.Cell.Object.Name, "text"),
+                    }
+                ));
+
+                break;
+            }
+        }
+        catch (AttributeTestException e)
+        {
+            testResults.Add(new AttributeTestResult(e.ObjectName, e.AttributeName, "--", e.Message));
+        }
+        catch (Exception e)
+        {
+            testResults.Add(new AttributeTestResult("--", "--", "--", e.Message));
         }
 
         return new AttributeTestResultCollection(testResults);
