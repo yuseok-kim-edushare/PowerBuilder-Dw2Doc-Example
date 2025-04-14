@@ -48,7 +48,7 @@ namespace Appeon.DotnetDemo.DocumentWriter
 
             foreach (var entry in data)
             {
-                var tokens = entry.Split(separator);
+                var tokens = entry.Split(new[] { separator[0] });
                 dict.Add(tokens[0], tokens.Length > 1 ? tokens[1] : nullString);
             }
 

@@ -139,7 +139,7 @@ namespace Appeon.DotnetDemo.DocumentWriter
                         //row = sheet.CreateRow(realRow);
                     }
 
-                    columns = data[i].Split(separator);
+                    columns = data[i].Split(new[] { separator[0] });
 
                     previousCell = null;
                     for (int j = 0; j < columns.Length; j++)

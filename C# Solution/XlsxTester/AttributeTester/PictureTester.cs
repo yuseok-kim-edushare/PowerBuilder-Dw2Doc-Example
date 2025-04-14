@@ -55,11 +55,17 @@ public class PictureTester : AbstractAttributeTester<DwPictureAttributes>
 
             using var sha1 = System.Security.Cryptography.SHA512.Create();
 
+            // Helper method for .NET Framework 4.8.1 compatibility
+            string ToHexString(byte[] bytes)
+            {
+                return BitConverter.ToString(bytes).Replace("-", "");
+            }
+
             testResults.Add(new(
                 cell.Cell.Object.Name,
                 "picture hashes",
-                Convert.ToHexString(sha1.ComputeHash(buffer, 0, buffer.Length)),
-                Convert.ToHexString(sha1.ComputeHash(picture.PictureData.Data, 0, picture.PictureData.Data.Length))));
+                ToHexString(sha1.ComputeHash(buffer, 0, buffer.Length)),
+                ToHexString(sha1.ComputeHash(picture.PictureData.Data, 0, picture.PictureData.Data.Length))));
 
             break;
         }

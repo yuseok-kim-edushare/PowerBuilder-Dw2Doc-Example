@@ -1,6 +1,9 @@
-﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
+﻿using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects;
+using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
+using Appeon.DotnetDemo.Dw2Doc.Common.Extensions;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid;
 using Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Models;
+using System.Text;
 
 namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
 {

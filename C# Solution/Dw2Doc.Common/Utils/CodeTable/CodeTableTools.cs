@@ -1,4 +1,5 @@
 ﻿using Appeon.DotnetDemo.Dw2Doc.Common.Constants;
+using Appeon.DotnetDemo.Dw2Doc.Common.Extensions;
 using System.Text;
 
 namespace Appeon.DotnetDemo.Dw2Doc.Common.Utils.CodeTable;
@@ -12,10 +13,10 @@ public class CodeTableTools
 
         try
         {
-            string[] tokens = codetableString.Split("/", StringSplitOptions.RemoveEmptyEntries);
+            string[] tokens = codetableString.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string token in tokens)
             {
-                var items = token.Split("\t");
+                var items = token.Split(new[] { '\t' });
                 dict[items[1]] = items[0];
             }
 

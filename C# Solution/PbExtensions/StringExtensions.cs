@@ -11,7 +11,7 @@ namespace Appeon.CSharpPbExtensions
 
         public static void Split(string source, string separator, out string[] stringArray)
         {
-            stringArray = source.Split(separator);
+            stringArray = source.Split(new[] { separator[0] });
         }
 
         public static string Join(string[] source, string separator)
