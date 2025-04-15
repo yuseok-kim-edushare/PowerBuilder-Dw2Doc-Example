@@ -1,0 +1,115 @@
+﻿$PBExportHeader$m_exporttarget.srm
+forward
+global type m_exporttarget from menu
+end type
+type m_toxlsx from menu within m_exporttarget
+end type
+type m_todocx from menu within m_exporttarget
+end type
+global type m_exporttarget from menu
+m_toxlsx m_toxlsx
+m_todocx m_todocx
+end type
+end forward
+
+global type m_exporttarget from menu
+m_toxlsx m_toxlsx
+m_todocx m_todocx
+end type
+global m_exporttarget m_exporttarget
+
+type variables
+powerobject iw_callback
+end variables
+
+on m_exporttarget.create
+m_exporttarget=this
+call super::create
+this.menutextcolor = 134217735
+this.menubackcolor = 134217732
+this.menuhighlightcolor = 134217741
+this.textsize = 8
+this.weight = 400
+this.facename = "Tahoma"
+this.titlebackcolor = 134217730
+this.bitmapbackcolor = 12632256
+this.menubitmaps = true
+this.titlegradient = true
+this.toolbartextcolor = 134217746
+this.toolbarbackcolor = 67108864
+this.toolbarhighlightcolor = 134217741
+this.toolbargradient = true
+this.bitmapgradient = true
+this.m_toxlsx=create m_toxlsx
+this.m_todocx=create m_todocx
+this.Item[UpperBound(this.Item)+1]=this.m_toxlsx
+this.Item[UpperBound(this.Item)+1]=this.m_todocx
+end on
+
+on m_exporttarget.destroy
+call super::destroy
+destroy(this.m_toxlsx)
+destroy(this.m_todocx)
+end on
+
+type m_toxlsx from menu within m_exporttarget
+end type
+
+on m_toxlsx.create
+call super::create
+this.text = "To XLSX"
+this.menutextcolor = 134217735
+this.menubackcolor = 134217732
+this.menuhighlightcolor = 134217741
+this.textsize = 8
+this.weight = 400
+this.facename = "Tahoma"
+this.titlebackcolor = 134217730
+this.bitmapbackcolor = 12632256
+this.menubitmaps = true
+this.titlegradient = true
+this.toolbartextcolor = 134217746
+this.toolbarbackcolor = 67108864
+this.toolbarhighlightcolor = 134217741
+this.toolbargradient = true
+this.bitmapgradient = true
+end on
+
+on m_toxlsx.destroy
+call super::destroy
+end on
+
+event clicked;iw_callback.dynamic wf_exportxlsx(iw_callback)
+
+end event
+
+type m_todocx from menu within m_exporttarget
+end type
+
+on m_todocx.create
+call super::create
+this.text = "To DOCX"
+this.menutextcolor = 134217735
+this.menubackcolor = 134217732
+this.menuhighlightcolor = 134217741
+this.textsize = 8
+this.weight = 400
+this.facename = "Tahoma"
+this.titlebackcolor = 134217730
+this.bitmapbackcolor = 12632256
+this.menubitmaps = true
+this.titlegradient = true
+this.toolbartextcolor = 134217746
+this.toolbarbackcolor = 67108864
+this.toolbarhighlightcolor = 134217741
+this.toolbargradient = true
+this.bitmapgradient = true
+end on
+
+on m_todocx.destroy
+call super::destroy
+end on
+
+event clicked;iw_callback.dynamic wf_exportdocx( )
+end event
+

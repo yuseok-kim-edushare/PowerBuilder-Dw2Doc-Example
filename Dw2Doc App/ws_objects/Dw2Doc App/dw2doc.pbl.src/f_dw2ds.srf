@@ -1,0 +1,19 @@
+﻿$PBExportHeader$f_dw2ds.srf
+global type f_dw2ds from function_object
+end type
+
+forward prototypes
+global function datastore f_dw2ds (datawindow adw_source, dwbuffer adwb_source)
+end prototypes
+
+global function datastore f_dw2ds (datawindow adw_source, dwbuffer adwb_source);datastore lds_store
+
+lds_store = create datastore
+lds_store.dataobject = adw_source.dataobject
+lds_store.create( adw_source.describe('DataWindow.Syntax') )
+
+adw_source.ShareData(lds_store)
+
+return lds_store
+end function
+

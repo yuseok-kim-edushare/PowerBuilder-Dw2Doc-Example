@@ -1,0 +1,16 @@
+﻿$PBExportHeader$str_renderingsettings.srs
+global type str_renderingsettings from structure
+	integer		i_xthreshold
+	integer		i_ythreshold
+	boolean		b_renderline
+	boolean		b_renderrectangle
+	boolean		b_renderoval
+	boolean		b_renderbitmap
+	boolean		b_renderbutton
+	boolean		b_pruneunused
+	boolean		b_ignoremisaligned
+	string		s_bands[]
+	boolean		b_exportcolor
+	boolean		b_logging
+end type
+

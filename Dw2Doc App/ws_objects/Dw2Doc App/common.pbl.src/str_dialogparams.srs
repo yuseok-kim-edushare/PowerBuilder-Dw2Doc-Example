@@ -1,0 +1,8 @@
+﻿$PBExportHeader$str_dialogparams.srs
+global type str_dialogparams from structure
+	string		s_title
+	string		s_prompt
+	string		s_content
+	boolean		b_ispassword
+end type
+

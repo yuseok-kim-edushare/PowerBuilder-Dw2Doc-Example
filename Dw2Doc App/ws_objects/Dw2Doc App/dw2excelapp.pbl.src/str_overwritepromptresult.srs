@@ -1,0 +1,6 @@
+﻿$PBExportHeader$str_overwritepromptresult.srs
+global type str_overwritepromptresult from structure
+	boolean		b_overwrite
+	string		s_sheetname
+end type
+

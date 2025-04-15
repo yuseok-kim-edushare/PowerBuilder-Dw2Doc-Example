@@ -1,0 +1,132 @@
+﻿$PBExportHeader$f_getsystemcolor.srf
+global type f_getsystemcolor from function_object
+end type
+
+forward prototypes
+global function boolean f_getsystemcolor (long al_colorindex, ref long al_rgbcolor, ref string as_colorname)
+end prototypes
+
+global function boolean f_getsystemcolor (long al_colorindex, ref long al_rgbcolor, ref string as_colorname);string ls_colorname
+string ls_registrykey
+string ls_separator
+string ls_hardcoded
+
+ls_registrykey = "HKEY_CURRENT_USER\Control Panel\Colors"
+ls_separator = ' '
+
+
+choose case al_colorindex
+	case 1083244543
+		goto windowbackground
+	case 1086902488
+		goto windowbackground
+	case 1073741824
+windowbackground:
+		ls_colorname = "Window"
+	case 33554592
+		goto windowtext
+	case 33554432
+windowtext:
+		ls_colorname = "WindowText"
+	case 268435456
+		ls_colorname = "AppWorkspace"
+	case 78682240
+		goto buttonface
+	case 74481808
+		goto buttonface
+	case 67108864
+buttonface:
+		ls_colorname = "ButtonFace"
+	case 134217728
+		ls_colorname = "Scrollbar"
+	case 134217729
+		ls_colorname = "Desktop"
+		ls_hardcoded = "0"
+	case 134217730
+		ls_colorname = "ActiveTitle"
+	case 134217731
+		ls_colorname = "InactiveTitle"
+	case 134217732
+		ls_colorname = "MenuBar"
+	case 134217734
+		ls_colorname = "WindowFrame"
+	case 134217735
+		ls_colorname = "MenuText"
+	case 134217737
+		ls_colorname = "Active Titlebar Text"		
+		ls_hardcoded = "0"
+	case 134217738
+		ls_colorname = "ActiveBorder"
+	case 134217739
+		ls_colorname = "InactiveBorder"
+	case 134217741
+		ls_colorname = "Hilight"
+	case 134217742
+		ls_colorname = "HilightText"
+	case 134217744
+		ls_colorname = "ButtonShadow"
+	case 134217745
+		ls_colorname = "Disabled Text"
+		ls_hardcoded = "7171437"
+	case 134217746
+		ls_colorname = "ButtonText"
+	case 134217747
+		ls_colorname = "InactiveTitleText"	
+	case 134217748
+		ls_colorname = "ButtonHilight"
+	case 134217749
+		ls_colorname = "ButtonDkShadow"
+	case 134217750
+		ls_colorname = "ButtonLight"
+	case 134217751
+		ls_colorname = "InfoText"
+	case 134217752
+		ls_colorname = "InfoWindow"
+	case 134217856 // Link
+		ls_colorname = "Anchor Color"
+		ls_registrykey = "HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Settings"
+		ls_separator = ','
+	case 134217857 // Link Hover
+		ls_colorname = "Anchor Color Hover"
+		ls_registrykey = "HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Settings"
+		ls_separator = ','
+	case 134217858 // Link Active
+		ls_colorname = "Anchor Color Hover"
+		ls_registrykey = "HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Settings"
+		ls_separator = ','
+	case 134217859 // Link visited
+		ls_colorname = "Anchor Color Visited"
+		ls_registrykey = "HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Settings"
+		ls_separator = ','
+	case else
+		return false
+end choose
+
+String ls_Value
+Integer li_pos1
+Integer li_pos2
+Long ll_r
+Long ll_g
+Long ll_b
+Long ll_Color
+
+as_colorname = ls_colorname
+
+string tmp
+If RegistryGet(ls_registrykey, ls_colorname, RegString!, ls_Value) > 0 Then
+	li_pos1 = Pos(ls_Value, ls_separator, 1)
+	ll_r = Long(Mid(ls_Value,1,li_pos1 - 1))
+	li_pos2 = Pos(ls_Value, ls_separator, li_pos1 + 1)
+	ll_g = Long(Mid(ls_Value,li_pos1 + 1, li_pos2 - li_pos1))
+	ll_b = Long(Mid(ls_Value, li_pos2 + 1))
+	
+	ll_Color = RGB(ll_r, ll_g, ll_b)
+	al_rgbcolor = ll_Color
+	return true
+elseif ls_hardcoded <> "" then
+	al_rgbcolor = Long(ls_hardcoded)
+End If
+
+return false
+end function
+

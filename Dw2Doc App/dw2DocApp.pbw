@@ -5,4 +5,5 @@ Save Format v3.0(19990112)
  2 "Dw2Doc App\\dw2excelapp_testcases.pbt";
 @end;
 DefaultTarget "Dw2Doc App\\dw2excelapp_testcases.pbt";
+DefaultExportEncode "UTF-8";
 DefaultRemoteTarget "Dw2Doc App\\dw2excelapp_testcases.pbt";

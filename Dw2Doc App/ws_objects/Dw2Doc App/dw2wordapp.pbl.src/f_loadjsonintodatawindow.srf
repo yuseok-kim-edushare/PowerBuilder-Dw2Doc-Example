@@ -1,0 +1,20 @@
+﻿$PBExportHeader$f_loadjsonintodatawindow.srf
+global type f_loadjsonintodatawindow from function_object
+end type
+
+forward prototypes
+global function integer f_loadjsonintodatawindow (string as_jsonfile, ref datawindow adw)
+end prototypes
+
+global function integer f_loadjsonintodatawindow (string as_jsonfile, ref datawindow adw);string ls_data
+int li_file
+int li_res
+
+li_file = FileOpen(as_jsonfile, TextMode!, Read!)
+FileReadEx(li_file, ls_data)
+FileClose(li_file)
+li_res = adw.ImportJson(ls_data)
+
+return li_res
+end function
+

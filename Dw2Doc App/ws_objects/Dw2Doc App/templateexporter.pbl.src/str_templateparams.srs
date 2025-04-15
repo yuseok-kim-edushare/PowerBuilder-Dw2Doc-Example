@@ -1,0 +1,11 @@
+﻿$PBExportHeader$str_templateparams.srs
+global type str_templateparams from structure
+	string		s_prompt
+	string		s_label
+	string		s_extension
+	string		s_thumbnailpattern
+	string		s_templatepattern
+	integer		i_templatetype
+	boolean		b_silent
+end type
+
