@@ -1,0 +1,24 @@
+name: .NET build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: windows-2022
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Restore dependencies
+      run: dotnet restore .\C# Solution\Dw2Doc.sln
+    
+    - name: Build
+      run: dotnet build .\C# Solution\Dw2Doc.sln --no-restore
+      
+#    - name: Test
+#      run: dotnet test --no-build --verbosity normal
