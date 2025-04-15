@@ -7,6 +7,8 @@ namespace Appeon.CSharpPbExtensions
     {
         public static string ToString(object obj)
         {
+            if (obj is null)
+                return string.Empty;
             if (obj is string str)
                 return str;
             if (obj is IEnumerable enumerable)
@@ -23,7 +25,7 @@ namespace Appeon.CSharpPbExtensions
                     sb.Length -= 2;
                 return sb.ToString();
             }
-            return obj.ToString();
+            return obj.ToString() ?? string.Empty;
         }
     }
 }
