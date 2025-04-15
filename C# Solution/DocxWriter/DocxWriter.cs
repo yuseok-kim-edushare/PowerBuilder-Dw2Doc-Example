@@ -61,9 +61,9 @@ namespace Appeon.DotnetDemo.DocumentWriter
             {
                 var parText = paragraph.ParagraphText;
 
-                var matches = ArgumentDelimiterRegex.Matches(parText) as IReadOnlyList<Match>;
-
-                foreach (var match in matches)
+                var matchCollection = ArgumentDelimiterRegex.Matches(parText);
+                
+                foreach (Match match in matchCollection)
                 {
                     if (!match.Success)
                     {
@@ -77,7 +77,6 @@ namespace Appeon.DotnetDemo.DocumentWriter
                     {
                         parText = parText.Replace(matchString, arguments[matchContents]);
                     }
-
                 }
 
                 paragraph.ReplaceText(paragraph.ParagraphText, parText);
@@ -144,9 +143,9 @@ namespace Appeon.DotnetDemo.DocumentWriter
             {
                 var parText = paragraph.ParagraphText;
 
-                var matches = ArgumentDelimiterRegex.Matches(parText) as IReadOnlyList<Match>;
-
-                foreach (var match in matches)
+                var matchCollection = ArgumentDelimiterRegex.Matches(parText);
+                
+                foreach (Match match in matchCollection)
                 {
                     if (!match.Success)
                     {
@@ -160,7 +159,6 @@ namespace Appeon.DotnetDemo.DocumentWriter
                     {
                         parText = parText.Replace(matchString, replaceWith);
                     }
-
                 }
 
                 paragraph.ReplaceText(paragraph.ParagraphText, parText);

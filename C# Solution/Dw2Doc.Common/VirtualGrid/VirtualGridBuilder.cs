@@ -158,7 +158,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
                     var lastRow = paddingRow.PreviousEntity;
                     foreach (var (band, rows) in rowsPerBand)
                     {
-                        if (rows.Contains(lastRow))
+                        if (lastRow != null && rows.Contains(lastRow))
                         {
                             rowsPerBand[band].Add(paddingRow);
                             break;
@@ -222,7 +222,10 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
                         }
                     }
 
-                    rowsPerBand[row.BandName].Remove(row);
+                    if (row.BandName != null && rowsPerBand.ContainsKey(row.BandName))
+                    {
+                        rowsPerBand[row.BandName].Remove(row);
+                    }
                     virtualRows.Remove(row);
                 }
 

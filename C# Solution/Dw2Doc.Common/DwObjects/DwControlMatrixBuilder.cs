@@ -73,6 +73,12 @@
                 }
             }
 
+            // Make sure we have a valid bands list
+            if (_bands == null)
+            {
+                _bands = new List<DwBand>();
+            }
+
             return new DwControlMatrix(list, _bands);
         }
     }

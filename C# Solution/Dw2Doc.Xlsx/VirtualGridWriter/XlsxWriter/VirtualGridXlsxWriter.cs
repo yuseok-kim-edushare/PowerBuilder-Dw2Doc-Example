@@ -17,8 +17,8 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
     public class VirtualGridXlsxWriter : AbstractVirtualGridWriter
     {
         private readonly Regex mergedCellsRegex = new(@"Cannot add merged region (.+) to sheet because it overlaps with an existing merged region \((.+)\)\.");
-        private int _startRowOffset;
-        private int _startColumnOffset;
+        private int _startRowOffset = 0;
+        private int _startColumnOffset = 0;
         private int _currentRowOffset;
         private XSSFWorkbook? _workbook;
         private XSSFSheet? _sheet;
@@ -26,11 +26,10 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
         private ISet<ColumnDefinition>? _resizedColumns;
         private IDictionary<string, int>? _pictureCache;
         private bool _writerInitialized = false;
-        private bool _appendingToSheet = false;
         private string _path;
         private FileStream? _destinationFile;
         private bool _closed = false;
-        private Dictionary<string, VirtualCell?> rangedCells;
+        private Dictionary<string, VirtualCell?> rangedCells = new();
 
         internal VirtualGridXlsxWriter(VirtualGrid grid, string path)
             : base(grid)
@@ -43,7 +42,6 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
             _resizedColumns.AddRange(VirtualGrid.Columns);
             _pictureCache = new Dictionary<string, int>();
             _path = path;
-            rangedCells = new();
             LockFile(_path);
         }
 
@@ -67,8 +65,6 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
 
             _resizedColumns.AddRange(VirtualGrid.Columns);
             _pictureCache = new Dictionary<string, int>();
-
-            _appendingToSheet = true;
         }
 
         [MemberNotNull(nameof(_destinationFile))]
@@ -82,15 +78,18 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
         private void InitWriter()
         {
             if (_writerInitialized) return;
-
-            var row = _sheet.CreateRow(_startRowOffset);
-            foreach (var column in _resizedColumns)
+            
+            if (_sheet != null)
             {
-                row.CreateCell(column.IndexOffset + _startColumnOffset);
-                _sheet.SetColumnWidth(column.IndexOffset + _startColumnOffset, (int)UnitConversion.PixelsToColumnWidth(column.Size));
-            }
+                var row = _sheet.CreateRow(_startRowOffset);
+                foreach (var column in _resizedColumns ?? Enumerable.Empty<ColumnDefinition>())
+                {
+                    row.CreateCell(column.IndexOffset + _startColumnOffset);
+                    _sheet.SetColumnWidth(column.IndexOffset + _startColumnOffset, (int)UnitConversion.PixelsToColumnWidth(column.Size));
+                }
 
-            _sheet.RemoveRow(row);
+                _sheet.RemoveRow(row);
+            }
 
             _writerInitialized = true;
         }
@@ -108,11 +107,18 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
                     throw new InvalidOperationException("This writer has already been closed");
                 }
 
+                if (_sheet == null || _workbook == null)
+                {
+                    throw new InvalidOperationException("Sheet or workbook is null");
+                }
+
                 var exportedCells = new List<ExportedCellBase>();
                 ExportedCellBase? exportedCell = null;
 
                 foreach (var row in rows)
                 {
+                    if (_sheet == null) continue;
+                    
                     var xRow = _sheet.CreateRow(_startRowOffset + _currentRowOffset);
 
                     checked
@@ -134,9 +140,14 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
                         var renderer = RendererLocator.Find(attribute.GetType())
                             ?? throw new InvalidOperationException($"Could not find renderer for attribute [{attribute.GetType().FullName}]");
 
-                        if (renderer is XlsxPictureRenderer pictureRenderer)
+                        if (renderer is XlsxPictureRenderer pictureRenderer && _pictureCache != null)
                         {
                             pictureRenderer.SetPictureCache(_pictureCache);
+                        }
+
+                        if (_sheet == null)
+                        {
+                            continue;
                         }
 
                         if (cell.OwningColumn is not null && !cell.Object.Floating)
@@ -196,15 +207,18 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
                             if (cell is not FloatingVirtualCell floatingCell)
                                 throw new InvalidOperationException("Non-floating cell in FloatingObjects list");
                             previousCell = null;
-                            exportedCell = renderer.Render(_sheet, floatingCell,
-                                data[cell.Object.Name],
-                                (_startColumnOffset + floatingCell.Offset.StartColumn.IndexOffset,
-                                    _currentRowOffset,
-                                    _drawingPatriarch));
-
-                            if (exportedCell is not null)
+                            if (_drawingPatriarch != null)
                             {
-                                exportedCells.Add(exportedCell);
+                                exportedCell = renderer.Render(_sheet, floatingCell,
+                                    data[cell.Object.Name],
+                                    (_startColumnOffset + floatingCell.Offset.StartColumn.IndexOffset,
+                                        _currentRowOffset,
+                                        _drawingPatriarch));
+
+                                if (exportedCell is not null)
+                                {
+                                    exportedCells.Add(exportedCell);
+                                }
                             }
                         }
                     }
@@ -217,13 +231,16 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
                         && row.FloatingObjects.Count == 0
                         || (unoccupiedTrailingColumns = VirtualGrid.Columns.Count - lastOccupiedColumn) > 2)
                     {
-                        var cellRange = new CellRangeAddress(
-                            _currentRowOffset + _startRowOffset,
-                            _currentRowOffset + _startRowOffset,
-                            _startColumnOffset + unoccupiedTrailingColumns > 2 ? (lastOccupiedColumn + 1) : 0,
-                            _startColumnOffset + VirtualGrid.Columns.Count - 1);
-                        rangedCells[cellRange.FormatAsString()] = null;
-                        _sheet.AddMergedRegion(cellRange);
+                        if (_sheet != null)
+                        {
+                            var cellRange = new CellRangeAddress(
+                                _currentRowOffset + _startRowOffset,
+                                _currentRowOffset + _startRowOffset,
+                                _startColumnOffset + unoccupiedTrailingColumns > 2 ? (lastOccupiedColumn + 1) : 0,
+                                _startColumnOffset + VirtualGrid.Columns.Count - 1);
+                            rangedCells[cellRange.FormatAsString()] = null;
+                            _sheet.AddMergedRegion(cellRange);
+                        }
                     }
 
                     ++_currentRowOffset;
@@ -250,10 +267,10 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
         public override bool Write(string? sheetname, out string? error)
         {
             error = null;
-
-            if (_path is null)
+            
+            if (_workbook == null || _destinationFile == null)
             {
-                error = "No file specified";
+                error = "Workbook or destination file is null";
                 return false;
             }
             if (_closed)
@@ -275,14 +292,25 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
             }
             finally
             {
-                _workbook.Dispose();
-                _workbook = null;
+                if (_workbook != null)
+                {
+                    _workbook.Dispose();
+                    _workbook = null;
+                }
                 _sheet = null;
                 _drawingPatriarch = null;
-                _resizedColumns.Clear();
-                _resizedColumns = null;
-                _pictureCache.Clear();
-                _pictureCache = null;
+                
+                if (_resizedColumns != null)
+                {
+                    _resizedColumns.Clear();
+                    _resizedColumns = null;
+                }
+                
+                if (_pictureCache != null)
+                {
+                    _pictureCache.Clear();
+                    _pictureCache = null;
+                }
             }
 
             return true;

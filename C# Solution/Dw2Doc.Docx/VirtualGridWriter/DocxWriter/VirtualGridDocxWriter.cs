@@ -12,7 +12,6 @@ namespace Appeon.DotnetDemo.Dw2Doc.Docx.VirtualGridWriter.DocxWriter
     {
         private XWPFDocument _document;
         private bool _documentInitialized = false;
-        private int _currentRow;
 
         private XWPFTable? _workingTable;
 

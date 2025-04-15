@@ -10,7 +10,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.DwObjects
         public Color Value { get; set; }
 
         // override object.Equals
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is DwColorWrapper other
                 && other.Value == Value;

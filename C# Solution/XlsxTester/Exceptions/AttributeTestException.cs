@@ -1,11 +1,13 @@
-﻿namespace Appeon.DotnetDemo.Dw2Doc.XlsxTester.Exceptions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
+namespace Appeon.DotnetDemo.Dw2Doc.XlsxTester.Exceptions;
 
 [Serializable]
-public class AttributeTestException : Exception
+public class AttributeTestException : Exception, ISerializable
 {
-    public string ObjectName { get; set; }
-    public string AttributeName { get; set; }
+    public string ObjectName { get; set; } = string.Empty;
+    public string AttributeName { get; set; } = string.Empty;
 
     public AttributeTestException(string objectName, string propName) : base()
     {
@@ -18,6 +20,7 @@ public class AttributeTestException : Exception
         ObjectName = objectName;
         AttributeName = propName;
     }
+    
     public AttributeTestException(
         string objectName, string propName,
         string message, Exception inner) : base(message, inner)
@@ -25,11 +28,24 @@ public class AttributeTestException : Exception
         ObjectName = objectName;
         AttributeName = propName;
     }
-    protected AttributeTestException(
-      System.Runtime.Serialization.SerializationInfo info,
-      System.Runtime.Serialization.StreamingContext context) : base(info, context)
+    
+#if NET8_0_OR_GREATER
+    [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051")]
+#endif
+    protected AttributeTestException(SerializationInfo info, StreamingContext context)
+        : base(info, context)
     {
-        ObjectName = string.Empty;
-        AttributeName = string.Empty;
+        ObjectName = info.GetString(nameof(ObjectName)) ?? string.Empty;
+        AttributeName = info.GetString(nameof(AttributeName)) ?? string.Empty;
+    }
+    
+#if NET8_0_OR_GREATER
+    [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051")]
+#endif
+    void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
+    {
+        base.GetObjectData(info, context);
+        info.AddValue(nameof(ObjectName), ObjectName);
+        info.AddValue(nameof(AttributeName), AttributeName);
     }
 }

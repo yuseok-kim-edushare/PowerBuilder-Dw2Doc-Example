@@ -8,7 +8,7 @@ public class DwCheckboxAttributes : DwTextAttributes
     public bool LeftText { get; set; }
 
     // override object.Equals
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return base.Equals(obj)
             && obj is DwCheckboxAttributes that

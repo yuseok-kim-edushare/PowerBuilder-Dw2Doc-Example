@@ -18,7 +18,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes
         }
 
         // override object.Equals
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return base.Equals(obj)
                 && obj is DwShapeAttributes that

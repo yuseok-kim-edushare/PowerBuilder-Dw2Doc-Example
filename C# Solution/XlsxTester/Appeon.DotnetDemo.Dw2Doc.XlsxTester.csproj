@@ -7,6 +7,11 @@
     <LangVersion>12.0</LangVersion>
   </PropertyGroup>
 
+  <!-- Suppress SYSLIB0051 warning only for .NET 8.0 -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <NoWarn>$(NoWarn);SYSLIB0051</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Dw2Doc.Common\Appeon.DotnetDemo.Dw2Doc.Common.csproj" />
     <ProjectReference Include="..\Dw2Doc.Xlsx\Appeon.DotnetDemo.Dw2Doc.Xlsx.csproj" />

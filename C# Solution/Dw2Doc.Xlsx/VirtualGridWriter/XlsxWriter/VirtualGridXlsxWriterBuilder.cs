@@ -50,11 +50,9 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.XlsxWriter
             string filePath,
             out string? error)
         {
-
-            throw new NotImplementedException();
             error = null;
-
-            //return new VirtualGridXlsxWriter(grid);
+            throw new NotImplementedException();
+            // Future implementation will go here
         }
     }
 }

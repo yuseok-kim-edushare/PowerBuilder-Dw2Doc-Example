@@ -6,7 +6,7 @@
         public int FontSize { get; set; } = 9;
 
         // override object.Equals
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return base.Equals(obj)
                 && obj is DwButtonAttributes that

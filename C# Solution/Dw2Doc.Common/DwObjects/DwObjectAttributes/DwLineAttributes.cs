@@ -24,7 +24,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes
         public DwLineAttributes() { }
 
         // override object.Equals
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return base.Equals(obj)
                 && obj is DwLineAttributes other

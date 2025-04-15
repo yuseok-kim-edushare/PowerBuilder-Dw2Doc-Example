@@ -19,9 +19,9 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
             set { _previousDataSet0 = value; }
         }
 
-        private List<BandRows> _bandsWithoutRelatedHeaders;
-        private ISet<string> _unrepeatableBands;
-        private Dictionary<string, bool> _bandsWithChanges = new();
+        private List<BandRows>? _bandsWithoutRelatedHeaders;
+        private ISet<string>? _unrepeatableBands;
+        private Dictionary<string, bool>? _bandsWithChanges = new();
         private int _currentBandIndex;
         private BandRows? _currentBandRow;
 
@@ -43,7 +43,7 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
         {
             if (newBandIndex < 0)
                 _currentBandRow = null;
-            else
+            else if (_bandsWithoutRelatedHeaders != null)
                 _currentBandRow = _bandsWithoutRelatedHeaders[newBandIndex];
             _currentBandIndex = newBandIndex;
             return newBandIndex;
@@ -59,6 +59,10 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
 
             var exportedCells = new List<ExportedCellBase>();
 
+            if (_bandsWithoutRelatedHeaders == null || _currentBandIndex < 0 || _currentBandIndex >= _bandsWithoutRelatedHeaders.Count)
+            {
+                return exportedCells;
+            }
 
             _currentBandRow = _bandsWithoutRelatedHeaders[_currentBandIndex];
             if (dataSet is null)
@@ -69,7 +73,8 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
                     {
                         foreach (var trailer in _bandsWithoutRelatedHeaders[_currentBandIndex].RelatedTrailers)
                         {
-                            var exported = (WriteRows(trailer.Rows, PreviousDataSet));
+                            var data = PreviousDataSet ?? new Dictionary<string, DwObjectAttributesBase>();
+                            var exported = (WriteRows(trailer.Rows, data));
 
                             if (exported is not null)
                             {
@@ -82,18 +87,19 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
                 return exportedCells;
             }
 
-            if (bandsWithChanges.Count > 0 && _currentBandRow.Name != bandsWithChanges[0])
+            if (_currentBandRow != null && bandsWithChanges.Count > 0 && _currentBandRow.Name != bandsWithChanges[0])
             {
-                // We need this loop to repeat once more after the confition is met
+                // We need this loop to repeat once more after the condition is met
                 bool oneMore = false;
-                while (_currentBandRow.Name != bandsWithChanges[0] || oneMore)
-                {   // if dataset changed inlucing bands previous to the current one,
+                while (_currentBandRow != null && _currentBandRow.Name != bandsWithChanges[0] || oneMore)
+                {   // if dataset changed including bands previous to the current one,
                     // write the trailers of the pending bands 
-                    if (_currentBandRow.RelatedTrailers.Count > 0)
+                    if (_currentBandRow != null && _currentBandRow.RelatedTrailers != null && _currentBandRow.RelatedTrailers.Count > 0)
                     {
                         foreach (var trailer in _currentBandRow.RelatedTrailers)
                         {
-                            var _exportedCells = WriteRows(trailer.Rows, PreviousDataSet);
+                            var data = PreviousDataSet ?? new Dictionary<string, DwObjectAttributesBase>();
+                            var _exportedCells = WriteRows(trailer.Rows, data);
                             if (_exportedCells is not null)
                                 exportedCells.AddRange(_exportedCells);
                         }
@@ -102,18 +108,21 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
                     // Guard against incorrectly looping past the condition
                     if (!oneMore)
                         UpdateCurrentBand(_currentBandIndex - 1);
-                    if (_currentBandRow.Name == bandsWithChanges[0])
+                    if (_currentBandRow != null && _currentBandRow.Name == bandsWithChanges[0])
                         oneMore = !oneMore;
                 }
             }
 
-            for (; _currentBandIndex < _bandsWithoutRelatedHeaders.Count; ++_currentBandIndex)
+            if (_bandsWithoutRelatedHeaders != null)
             {
-                var _exportedCells = WriteRows(_bandsWithoutRelatedHeaders[_currentBandIndex].Rows, dataSet);
+                for (; _currentBandIndex < _bandsWithoutRelatedHeaders.Count; ++_currentBandIndex)
+                {
+                    var _exportedCells = WriteRows(_bandsWithoutRelatedHeaders[_currentBandIndex].Rows, dataSet);
 
-                if (_exportedCells is not null) exportedCells.AddRange(_exportedCells);
+                    if (_exportedCells is not null) exportedCells.AddRange(_exportedCells);
+                }
+                --_currentBandIndex;
             }
-            --_currentBandIndex;
 
             return exportedCells;
         }
@@ -129,35 +138,71 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
                     throw new InvalidOperationException("Writer is already closed");
                 }
 
-                _bandsWithChanges.Clear();
+                if (_bandsWithChanges == null)
+                {
+                    _bandsWithChanges = new Dictionary<string, bool>();
+                }
+                else
+                {
+                    _bandsWithChanges.Clear();
+                }
 
                 if (dataSet is not null)
                 {
                     // Determine the bands that have changed
                     if (PreviousDataSet is null)
                     {
-                        foreach (var band in VirtualGrid.BandRows)
+                        if (VirtualGrid.BandRows != null)
                         {
-                            _bandsWithChanges[band.Name] = band.Rows.Count > 0;
+                            foreach (var band in VirtualGrid.BandRows)
+                            {
+                                _bandsWithChanges[band.Name] = band.Rows.Count > 0;
+                            }
                         }
-
                     }
                     else
                     {
-
                         foreach (var (_, cellSet) in VirtualGrid.CellRepository.CellsByY)
                         {
                             foreach (var cell in cellSet)
                             {
-                                if (!PreviousDataSet[cell.Object.Name]?.Equals(dataSet[cell.Object.Name]) ?? false)
+                                // Skip null objects or those with empty band names
+                                if (cell.Object == null || string.IsNullOrEmpty(cell.Object.Band) || cell.Object.Name == null)
                                 {
-                                    // Some columns pass different values per entry even though they're not supposed to change
-                                    // for example, in the DW header there are CurrentTime()-like computed columns
-                                    // these columns change each second, even though they display a static value
-                                    // so we hack away this problem by excluding from the patch-generation controls
-                                    // that belong to unupdatable bands (e.g. header)
-                                    if (!_unrepeatableBands.Contains(cell.Object.Band))
-                                        _bandsWithChanges[cell.Object.Band] = true;
+                                    continue;
+                                }
+
+                                // Skip unupdatable bands if _unrepeatableBands collection is available
+                                if (_unrepeatableBands != null && _unrepeatableBands.Contains(cell.Object.Band))
+                                {
+                                    continue;
+                                }
+
+                                // Check if the value has changed
+                                bool hasChanged = false;
+                                if (PreviousDataSet != null && PreviousDataSet.ContainsKey(cell.Object.Name))
+                                {
+                                    var prevValue = PreviousDataSet[cell.Object.Name];
+                                    var currValue = dataSet[cell.Object.Name];
+                                    
+                                    if (prevValue == null && currValue != null)
+                                    {
+                                        hasChanged = true;
+                                    }
+                                    else if (prevValue != null && !prevValue.Equals(currValue))
+                                    {
+                                        hasChanged = true;
+                                    }
+                                }
+                                else
+                                {
+                                    // No previous value, consider it changed
+                                    hasChanged = true;
+                                }
+
+                                if (hasChanged)
+                                {
+                                    _bandsWithChanges[cell.Object.Band] = true;
                                 }
                             }
                         }
@@ -179,16 +224,14 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
 
         public void Dispose()
         {
-
             _previousDataSet0?.Clear();
-            _bandsWithChanges.Clear();
-            _bandsWithoutRelatedHeaders.Clear();
-            _unrepeatableBands.Clear();
+            _bandsWithChanges?.Clear();
+            _bandsWithoutRelatedHeaders?.Clear();
+            _unrepeatableBands?.Clear();
             _previousDataSet0 = null;
             _bandsWithoutRelatedHeaders = null;
             _unrepeatableBands = null;
             _bandsWithChanges = null;
-
         }
 
         protected abstract IList<ExportedCellBase>? WriteRows(IList<RowDefinition> rows, IDictionary<string, DwObjectAttributesBase> data);

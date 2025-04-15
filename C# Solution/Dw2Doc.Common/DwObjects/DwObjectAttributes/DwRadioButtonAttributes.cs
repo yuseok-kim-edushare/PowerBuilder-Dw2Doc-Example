@@ -7,7 +7,7 @@ public class DwRadioButtonAttributes : DwTextAttributes
     public bool LeftText { get; set; }
 
     // override object.Equals
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return obj is DwRadioButtonAttributes other
             && Columns == other.Columns
@@ -15,7 +15,26 @@ public class DwRadioButtonAttributes : DwTextAttributes
             && ((CodeTable is null) == (other.CodeTable is null))
             && (CodeTable is null || CodeTable.Keys.SequenceEqual(other.CodeTable!.Keys))
             && (CodeTable is null || CodeTable.Values.SequenceEqual(other.CodeTable!.Values));
-
     }
 
+    // override object.GetHashCode
+    public override int GetHashCode()
+    {
+        var hashCode = HashCode.Combine(Columns, LeftText);
+        
+        if (CodeTable != null)
+        {
+            foreach (var key in CodeTable.Keys)
+            {
+                hashCode = HashCode.Combine(hashCode, key);
+            }
+            
+            foreach (var value in CodeTable.Values)
+            {
+                hashCode = HashCode.Combine(hashCode, value);
+            }
+        }
+        
+        return hashCode;
+    }
 }

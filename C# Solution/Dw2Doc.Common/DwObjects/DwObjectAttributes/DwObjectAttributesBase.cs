@@ -10,7 +10,7 @@
         }
 
         // override object.Equals
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is DwObjectAttributesBase other
                 && IsVisible == other.IsVisible

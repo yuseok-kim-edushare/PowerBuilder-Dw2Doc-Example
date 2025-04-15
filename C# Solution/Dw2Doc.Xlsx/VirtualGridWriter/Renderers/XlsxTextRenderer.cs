@@ -27,20 +27,32 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
             ICell renderTarget)
         {
             var textAttribute = CheckAttributeType<DwTextAttributes>(attribute);
-            XSSFCellStyle style = renderTarget.Row.Sheet.Workbook.CreateCellStyle() as XSSFCellStyle
-                ?? throw new InvalidCastException("Could not get XSSFCellStyle");
-            var font = (renderTarget.Row.Sheet.Workbook.CreateFont() as XSSFFont)!;
-            font.FontHeightInPoints = ConvertFontSize(textAttribute);
-            font.FontName = textAttribute.FontFace;
-            font.SetColor(new XSSFColor(new byte[] {
+            
+            // Use null-conditional operator and explicitly check for null
+            var cellStyle = renderTarget.Row.Sheet.Workbook.CreateCellStyle();
+            if (cellStyle is not XSSFCellStyle xssfStyle) 
+            {
+                throw new InvalidCastException("Could not get XSSFCellStyle");
+            }
+            
+            XSSFCellStyle style = xssfStyle;
+            var font = renderTarget.Row.Sheet.Workbook.CreateFont();
+            if (font is not XSSFFont xssfFont)
+            {
+                throw new InvalidCastException("Could not get XSSFFont");
+            }
+            
+            xssfFont.FontHeightInPoints = ConvertFontSize(textAttribute);
+            xssfFont.FontName = textAttribute.FontFace;
+            xssfFont.SetColor(new XSSFColor(new byte[] {
                 textAttribute.FontColor.Value.R,
                 textAttribute.FontColor.Value.G,
                 textAttribute.FontColor.Value.B}));
-            font.IsBold = textAttribute.FontWeight >= 700;
-            font.IsItalic = textAttribute.Italics;
-            font.IsStrikeout = textAttribute.Strikethrough;
-            font.Underline = textAttribute.Underline ? FontUnderlineType.Single : FontUnderlineType.None;
-            style.SetFont(font);
+            xssfFont.IsBold = textAttribute.FontWeight >= 700;
+            xssfFont.IsItalic = textAttribute.Italics;
+            xssfFont.IsStrikeout = textAttribute.Strikethrough;
+            xssfFont.Underline = textAttribute.Underline ? FontUnderlineType.Single : FontUnderlineType.None;
+            style.SetFont(xssfFont);
             style.SetFillForegroundColor(new XSSFColor(new byte[3] {
                 textAttribute.BackgroundColor.Value.R,
                 textAttribute.BackgroundColor.Value.G,
@@ -51,25 +63,22 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
             style.VerticalAlignment = VerticalAlignment.Top;
 
 
-
-            XSSFCell xTarget = renderTarget as XSSFCell;
-            if (textAttribute.FormatString is not null
+            // Use null-conditional operator and pattern matching to avoid null warnings
+            if (renderTarget is XSSFCell xTarget &&
+                textAttribute.FormatString is not null
                 && textAttribute.FormatString.ToLower() != "[general]")
             {
                 switch (textAttribute.DataType)
                 {
                     case Common.Enums.DataType.Money:
                     case Common.Enums.DataType.Number:
-                        style.SetDataFormat(sheet
-                            .Workbook
-                            .CreateDataFormat()
-                            .GetFormat(textAttribute
-                                    .FormatString
-                                    //?
-                                    //.Split(";")
-                                    //.FirstOrDefault() ?? ""
-                                    ));
-
+                        if (sheet.Workbook?.CreateDataFormat() != null)
+                        {
+                            style.SetDataFormat(sheet
+                                .Workbook
+                                .CreateDataFormat()
+                                .GetFormat(textAttribute.FormatString ?? string.Empty));
+                        }
                         break;
                 }
             }
@@ -77,7 +86,8 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers.Xlsx
             renderTarget.CellStyle = style;
             if (!string.IsNullOrEmpty(textAttribute.Text) &&
                 (textAttribute.DataType is Common.Enums.DataType.Money ||
-                textAttribute.DataType is Common.Enums.DataType.Number))
+                textAttribute.DataType is Common.Enums.DataType.Number) &&
+                !string.IsNullOrEmpty(textAttribute.RawText))
             {
                 renderTarget.SetCellValue(double.Parse(textAttribute.RawText));
             }
