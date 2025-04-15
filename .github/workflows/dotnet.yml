@@ -15,10 +15,16 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Restore dependencies
-      run: dotnet restore .\C# Solution\Dw2Doc.sln
+      run: |
+        cd "C# Solution"
+        dotnet restore Dw2Doc.sln
     
     - name: Build
-      run: dotnet build .\C# Solution\Dw2Doc.sln --no-restore
+      run: |
+        cd "C# Solution"
+        dotnet build Dw2Doc.sln --no-restore /warnaserror /p:TreatWarningsAsErrors=true
       
-#    - name: Test
-#      run: dotnet test --no-build --verbosity normal
+    - name: Test
+      run: |
+        cd "C# Solution"
+        dotnet test Dw2Doc.sln --no-build --verbosity normal
