@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -16,6 +15,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Appeon.DotnetDemo.DocxWriter", "DocxWriter\Appeon.DotnetDemo.DocxWriter.csproj", "{D5E71BB4-F74C-4E25-80F2-655DF675D479}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Appeon.DotnetDemo.Dw2Doc.XlsxTester", "XlsxTester\Appeon.DotnetDemo.Dw2Doc.XlsxTester.csproj", "{8543F1F4-3766-4B2F-B39F-372CBA4404AA}"
+EndProject
+Project("{3AC096D0-A1C2-E12C-1390-A8335801FDAB}") = "Appeon.DotnetDemo.Dw2Doc.Tests", "Dw2Doc.Tests\Appeon.DotnetDemo.Dw2Doc.Tests.csproj", "{D9A38E40-F4C9-4DF1-A2EA-C7205BD9C3FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +52,10 @@ Global
 		{8543F1F4-3766-4B2F-B39F-372CBA4404AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8543F1F4-3766-4B2F-B39F-372CBA4404AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8543F1F4-3766-4B2F-B39F-372CBA4404AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9A38E40-F4C9-4DF1-A2EA-C7205BD9C3FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9A38E40-F4C9-4DF1-A2EA-C7205BD9C3FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9A38E40-F4C9-4DF1-A2EA-C7205BD9C3FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9A38E40-F4C9-4DF1-A2EA-C7205BD9C3FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
