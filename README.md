@@ -143,6 +143,7 @@ If you run into any unexpected errors that prevent this demo from running, or wo
     dotnet publish Dw2Doc.sln --configuration Release -r windows -f net6.0-windows --no-restore /warnaserror /p:TreatWarningsAsErrors=true
 
 - you can chose build target framework by your needs, for commonly, .net framework 4.8.1 or .net6 or .net8 for pb 2022 or 2025
+  - and you can find build artifacts with pdb(for debugging) in C# solution/bin/-Target Frameworks-
 
 # Credits
 
