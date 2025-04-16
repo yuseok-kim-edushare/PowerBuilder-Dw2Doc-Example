@@ -18,4 +18,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <Target Name="copy artifacts" AfterTargets="Publish">
+    <Copy SourceFiles="$(OutputPath)publish\$(AssemblyName).dll" DestinationFolder="$(SolutionDir)bin\$(TargetFramework)" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
+

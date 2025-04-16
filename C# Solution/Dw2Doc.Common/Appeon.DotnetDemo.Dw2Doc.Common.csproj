@@ -7,6 +7,10 @@
     <LangVersion>12.0</LangVersion>
   </PropertyGroup>
 
+  <Target Name="copy artifacts"  Condition="'$(TargetFramework)'!='net481'" AfterTargets="Publish">
+    <Copy SourceFiles="$(OutputPath)publish\$(AssemblyName).dll" DestinationFolder="$(SolutionDir)bin\$(TargetFramework)" SkipUnchangedFiles="true" />
+  </Target>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net481'">
     <PackageReference Include="Polysharp" Version="1.15.0">
       <PrivateAssets>all</PrivateAssets>
@@ -15,6 +19,69 @@
     <PackageReference Include="System.Text.Json" Version="9.0.4" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+    <PackageReference Include="ILRepack" Version="2.0.41">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)'=='net481'">
+    <!-- Main DLL -->
+    <MergeAssemblies Include="$(OutputPath)\publish\$(AssemblyName).dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\Microsoft.Bcl.AsyncInterfaces.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\Microsoft.Bcl.HashCode.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.Buffers.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.IO.Pipelines.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.Memory.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.Numerics.Vectors.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.Runtime.CompilerServices.Unsafe.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.Text.Encodings.Web.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.Text.Json.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.Threading.Tasks.Extensions.dll" />
+    <MergeAssemblies Include="$(OutputPath)\publish\System.ValueTuple.dll" />
+  </ItemGroup>
+
+<Target Name="CreateILRepackCommand" Condition="'$(TargetFramework)'=='net481'" BeforeTargets="ILRepack">
+    <PropertyGroup>
+      <ILRepackArgs>/internalize /lib:"$(OutputPath)publish"</ILRepackArgs>
+      <ILRepackArgs Condition="'$(TargetFramework)'=='net481'">$(ILRepackArgs) /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319"</ILRepackArgs>
+      <ILRepackArgs>$(ILRepackArgs) /union /copyattrs</ILRepackArgs>
+      <ILRepackArgs>$(ILRepackArgs) /out:"$(SolutionDir)bin\$(TargetFramework)\$(AssemblyName).dll"</ILRepackArgs>
+    </PropertyGroup>
+    <Message Text="ILRepack Args: $(ILRepackArgs)" Importance="high" />
+  
+</Target>
+
+  <Target Name="ILRepack" Condition="'$(TargetFramework)'=='net481'" AfterTargets="Publish" DependsOnTargets="CreateILRepackCommand">
+    <ItemGroup>
+      <ILRepackExe Include="$(NuGetPackageRoot)\ilrepack\2.0.41\tools\ILRepack.exe" />
+    </ItemGroup>
+    <MakeDir Directories="$(SolutionDir)tools" />
+    <Copy SourceFiles="@(ILRepackExe)" DestinationFolder="$(SolutionDir)tools" SkipUnchangedFiles="true" />
+    <Message Text="Copying ILRepack.exe to $(SolutionDir)tools" Importance="high"/>
+    <WriteLinesToFile
+      File="$(ProjectDir)ilrepack.log"
+      Lines=""
+      Overwrite="true" />
+    <Message Text="Cleared ilrepack.log" Importance="high"/>
+    <Exec Command="&quot;$(SolutionDir)tools\ILRepack.exe&quot; $(ILRepackArgs) @(MergeAssemblies->'&quot;%(FullPath)&quot;', ' ') > &quot;$(ProjectDir)ilrepack.log&quot; 2>&amp;1" 
+          IgnoreExitCode="true"/>
+    <Message Text="ILRepack.exe executed $(AssemblyName).dll" Importance="high"/>
+    <ReadLinesFromFile File="$(ProjectDir)ilrepack.log">
+      <Output TaskParameter="Lines" ItemName="ILRepackLogLines"/>
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <ILRepackErrorLines Include="@(ILRepackLogLines)"
+        Condition="$([System.String]::Copy('%(ILRepackLogLines.Identity)').ToLower().Contains('error'))"/>
+      <ILRepackErrorLines Include="@(ILRepackLogLines)"
+        Condition="$([System.String]::Copy('%(ILRepackLogLines.Identity)').ToLower().Contains('input file not found'))"/>
+    </ItemGroup>
+    <Error Text="ILRepack error: %(ILRepackErrorLines.Identity)" Condition="@(ILRepackErrorLines->Count()) &gt; 0" />
+    <Message Text="ILRepack Log: %(ILRepackLogLines.Identity)" Importance="high"/>
+  </Target>
+
+
+  <Target Name="copy artifacts" Condition="'$(TargetFramework)'!='net481'" AfterTargets="Publish">
+    <Copy SourceFiles="$(OutputPath)publish\$(AssemblyName).dll" DestinationFolder="$(SolutionDir)bin\$(TargetFramework)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net6.0;net481</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows;net6.0-windows;net481</TargetFrameworks>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -12,5 +12,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
+  <Target Name="copy artifacts" AfterTargets="Publish">
+    <Copy SourceFiles="$(OutputPath)publish\$(AssemblyName).dll" DestinationFolder="$(SolutionDir)bin\$(TargetFramework)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

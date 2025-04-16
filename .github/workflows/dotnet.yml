@@ -26,7 +26,9 @@ jobs:
     - name: Build
       run: |
         cd "C# Solution"
-        dotnet build Dw2Doc.sln --no-restore /warnaserror /p:TreatWarningsAsErrors=true
+        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net8.0-windows --no-restore /warnaserror /p:TreatWarningsAsErrors=true
+        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net481 --no-restore /warnaserror /p:TreatWarningsAsErrors=true
+        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net6.0-windows --no-restore /warnaserror /p:TreatWarningsAsErrors=true
       
     - name: Test
       run: |

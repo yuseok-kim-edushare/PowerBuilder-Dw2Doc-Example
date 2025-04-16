@@ -135,6 +135,15 @@ Currently DataWindows can only be exported to Word documents via templates that 
 
 If you run into any unexpected errors that prevent this demo from running, or would like to submit a suggestion for a feature you would like to see added to the demo, submit a ticket on our [Support Portal](https://www.appeon.com/standardsupport/) so that we can follow up on it.
 
+## Build C# solution for using on your own powerbuilder app
+    
+    cd "C# Solution"
+    dotnet publish Dw2Doc.sln --configuration Release -r windows -f net8.0-windows --no-restore /warnaserror /p:TreatWarningsAsErrors=true
+    dotnet publish Dw2Doc.sln --configuration Release -r windows -f net481 --no-restore /warnaserror /p:TreatWarningsAsErrors=true
+    dotnet publish Dw2Doc.sln --configuration Release -r windows -f net6.0-windows --no-restore /warnaserror /p:TreatWarningsAsErrors=true
+
+- you can chose build target framework by your needs, for commonly, .net framework 4.8.1 or .net6 or .net8 for pb 2022 or 2025
+
 # Credits
 
 [Chemistry icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/chemistry)
