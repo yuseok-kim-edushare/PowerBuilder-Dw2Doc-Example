@@ -237,5 +237,49 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGridWriter.Abstractions
         protected abstract IList<ExportedCellBase>? WriteRows(IList<RowDefinition> rows, IDictionary<string, DwObjectAttributesBase> data);
 
         public abstract bool Write(string? sheetname, out string? error);
+
+        public bool WriteEntireGrid(string? sheetname, out string? error)
+        {
+            error = null;
+            
+            try
+            {
+                // Get the control attributes via reflection
+                var controlAttributesField = typeof(VirtualGrid.VirtualGrid).GetField("_controlAttributes", 
+                    System.Reflection.BindingFlags.NonPublic | 
+                    System.Reflection.BindingFlags.Instance);
+                
+                if (controlAttributesField == null)
+                {
+                    error = "Could not find _controlAttributes field in VirtualGrid";
+                    return false;
+                }
+                
+                var controlAttributes = controlAttributesField.GetValue(VirtualGrid) as Dictionary<string, DwObjectAttributesBase>;
+                
+                if (controlAttributes == null || controlAttributes.Count == 0)
+                {
+                    error = "No control attributes found in VirtualGrid";
+                    return false;
+                }
+                
+                // Process all rows using the control attributes
+                foreach (var band in VirtualGrid.BandRows)
+                {
+                    if (band.Rows.Count > 0)
+                    {
+                        WriteRows(band.Rows, controlAttributes);
+                    }
+                }
+                
+                // Delegate to the concrete implementation to finish writing
+                return Write(sheetname, out error);
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+        }
     }
 }

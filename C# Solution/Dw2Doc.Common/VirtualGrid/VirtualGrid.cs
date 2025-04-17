@@ -1,5 +1,6 @@
 ﻿using Appeon.DotnetDemo.Dw2Doc.Common.Enums;
 using Appeon.DotnetDemo.Dw2Doc.Common.Extensions;
+using Appeon.DotnetDemo.Dw2Doc.Common.DwObjects.DwObjectAttributes;
 using System.Text;
 
 namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
@@ -11,6 +12,9 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
         public IList<BandRows> BandRows { get; }
         internal VirtualCellRepository CellRepository { get; }
         public DwType DwType { get; set; }
+        
+        // Missing field that TestVirtualGrid.SetAttributes tries to access
+        private Dictionary<string, DwObjectAttributesBase> _controlAttributes;
 
         internal VirtualGrid(
             IList<RowDefinition> rows,
@@ -25,6 +29,25 @@ namespace Appeon.DotnetDemo.Dw2Doc.Common.VirtualGrid
             BandRows = rowsPerBand;
             CellRepository = cellRepository;
             this.DwType = DwType;
+            _controlAttributes = new Dictionary<string, DwObjectAttributesBase>();
+        }
+
+        // Add a method to get the control attributes for renderers to use
+        internal Dictionary<string, DwObjectAttributesBase> GetControlAttributes()
+        {
+            return _controlAttributes;
+        }
+
+        // Add a setter method for reflection to use
+        internal void SetAttributes(Dictionary<string, DwObjectAttributesBase> attributes)
+        {
+            if (attributes == null)
+                return;
+                
+            foreach (var attr in attributes)
+            {
+                _controlAttributes[attr.Key] = attr.Value;
+            }
         }
 
         public override string ToString()

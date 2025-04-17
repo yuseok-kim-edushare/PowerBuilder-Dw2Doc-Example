@@ -15,7 +15,46 @@ namespace Appeon.DotnetDemo.Dw2Doc.Xlsx.VirtualGridWriter.Renderers
     {
         public override ExportedCellBase? Render(ISheet sheet, VirtualCell cell, DwObjectAttributesBase attribute, ICell renderTarget)
         {
-            throw new NotImplementedException();
+            var buttonAttributes = CheckAttributeType<DwButtonAttributes>(attribute);
+            
+            // Create a cell style
+            if (sheet.Workbook is XSSFWorkbook workbook)
+            {
+                var style = workbook.CreateCellStyle();
+                var font = workbook.CreateFont();
+                
+                // Set up font - only use the FontSize that exists
+                if (font is XSSFFont xFont)
+                {
+                    xFont.FontHeightInPoints = buttonAttributes.FontSize;
+                    xFont.FontName = "Arial"; // Default font
+                    xFont.IsBold = true; // Make buttons bold by default
+                }
+                
+                style.SetFont(font);
+                style.Alignment = HorizontalAlignment.Center;
+                style.VerticalAlignment = VerticalAlignment.Center;
+                
+                // Add fill color (light gray for buttons)
+                style.FillForegroundColor = IndexedColors.Grey25Percent.Index;
+                style.FillPattern = FillPattern.SolidForeground;
+                
+                // Add border
+                style.BorderTop = BorderStyle.Thin;
+                style.BorderBottom = BorderStyle.Thin;
+                style.BorderLeft = BorderStyle.Thin;
+                style.BorderRight = BorderStyle.Thin;
+                
+                renderTarget.CellStyle = style;
+            }
+            
+            // Set the button text
+            renderTarget.SetCellValue(buttonAttributes.Text);
+            
+            return new ExportedCell(cell, attribute)
+            {
+                OutputCell = renderTarget
+            };
         }
 
         public override ExportedCellBase? Render(ISheet sheet, FloatingVirtualCell cell, DwObjectAttributesBase attribute, (int x, int y, XSSFDrawing draw) renderTarget)
