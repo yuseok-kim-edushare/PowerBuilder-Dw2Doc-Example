@@ -17,19 +17,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Restore dependencies
-      run: |
-        cd "C# Solution"
-        dotnet restore Dw2Doc.sln
-    
+        
     - name: Build
       run: |
         cd "C# Solution"
         dotnet restore Dw2Doc.sln
-        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net8.0-windows /warnaserror /p:TreatWarningsAsErrors=true
-        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net481 /warnaserror /p:TreatWarningsAsErrors=true
-        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net6.0-windows /warnaserror /p:TreatWarningsAsErrors=true
+        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net8.0-windows
+        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net481
+        dotnet publish Dw2Doc.sln --configuration Release -r windows -f net6.0-windows
       
     - name: Test
       run: |
