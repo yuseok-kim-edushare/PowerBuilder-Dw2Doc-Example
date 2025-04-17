@@ -21,7 +21,9 @@ jobs:
     - name: Restore dependencies
       run: |
         cd "C# Solution"
-        dotnet restore Dw2Doc.sln
+        dotnet restore Dw2Doc.sln --runtime windows -f net8.0-windows
+        dotnet restore Dw2Doc.sln --runtime windows -f net481
+        dotnet restore Dw2Doc.sln --runtime windows -f net6.0-windows
     
     - name: Build
       run: |
