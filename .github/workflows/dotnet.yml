@@ -1,4 +1,4 @@
-name: .NET build
+name: .NET ci
 
 on:
   push:
@@ -29,6 +29,4 @@ jobs:
     - name: Test
       run: |
         cd "C# Solution"
-        dotnet test Dw2Doc.Tests/Dw2Doc.Tests.csproj -f net8.0-windows --no-build --verbosity normal
-        dotnet test Dw2Doc.Tests/Dw2Doc.Tests.csproj -f net481 --no-build --verbosity normal
-        dotnet test Dw2Doc.Tests/Dw2Doc.Tests.csproj -f net6.0-windows --no-build --verbosity normal
+        dotnet test --no-build --verbosity normal
