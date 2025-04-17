@@ -1,21 +1,26 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Appeon.CSharpPbExtensions;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Appeon.DotnetDemo.Dw2Doc.Tests
 {
     [TestClass]
     public class ObjectExtensionsTests
     {
+
         [TestMethod]
         public void ToString_NullObject_ReturnsEmptyString()
         {
             // Arrange
             object? obj = null;
-            
+
             // Act
+            // cause of this test method is designed to handle null object, Suppress CS8604 warning.
+            #pragma warning disable CS8604 // Possible null reference argument.
             string result = ObjectExtensions.ToString(obj);
-            
+            #pragma warning restore CS8604 // Possible null reference argument.
+
             // Assert
             Assert.AreEqual(string.Empty, result);
         }

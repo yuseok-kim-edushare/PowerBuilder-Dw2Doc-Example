@@ -16,7 +16,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Appeon.DotnetDemo.DocxWrite
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Appeon.DotnetDemo.Dw2Doc.XlsxTester", "XlsxTester\Appeon.DotnetDemo.Dw2Doc.XlsxTester.csproj", "{8543F1F4-3766-4B2F-B39F-372CBA4404AA}"
 EndProject
-Project("{3AC096D0-A1C2-E12C-1390-A8335801FDAB}") = "Appeon.DotnetDemo.Dw2Doc.Tests", "Dw2Doc.Tests\Appeon.DotnetDemo.Dw2Doc.Tests.csproj", "{D9A38E40-F4C9-4DF1-A2EA-C7205BD9C3FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Appeon.DotnetDemo.Dw2Doc.Tests", "Dw2Doc.Tests\Appeon.DotnetDemo.Dw2Doc.Tests.csproj", "{D9A38E40-F4C9-4DF1-A2EA-C7205BD9C3FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
