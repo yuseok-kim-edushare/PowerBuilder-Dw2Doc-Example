@@ -8,7 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="NPOI" Version="2.7.3" />
+		<PackageReference Include="NPOI" Version="2.7.4" />
 		<PackageReference Include="ILRepack" Version="2.0.41">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
